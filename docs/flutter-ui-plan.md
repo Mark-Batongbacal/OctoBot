@@ -36,5 +36,14 @@ plus turn: a curved trajectory, not guaranteed sideways strafe.
 ## Deployment
 
 Apply this overlay at the **root** of Mark-Batongbacal/OctoBot and then run
-`cd flutter && flutter pub get && flutter analyze && flutter test && flutter run`.
+`cd flutter && flutter pub get && flutter analyze && flutter test && flutter devices && flutter run -d <ANDROID_DEVICE_ID>`.
 No files under the root firmware scaffold are altered.
+
+## Android-only correction
+
+Widget tests import `package:octobot/app/octobot_app.dart` directly instead of
+`package:octobot/main.dart`, which does not re-export `OctoBotApp`.
+
+The unused iOS/Swift Xcode runner and iOS Flutter platform metadata have been
+removed. Select an Android device explicitly when running (`flutter devices`,
+then `flutter run -d <ANDROID_DEVICE_ID>`).

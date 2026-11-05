@@ -1,6 +1,6 @@
 # OctoBot Control — Flutter UI
 
-Android-first field controller for the eight-legged OctoBot. This Flutter-only
+Android-only field controller for the eight-legged OctoBot. This Flutter-only
 implementation replaces the starter page with a restrained, functional robotics
 control interface. **The Arduino/ESP32 firmware has not been implemented.**
 
@@ -11,7 +11,8 @@ From the existing repository root:
 ```bash
 cd flutter
 flutter pub get
-flutter run
+flutter devices
+flutter run -d <ANDROID_DEVICE_ID>
 ```
 
 Install Android Studio / an Android SDK or connect an Android phone with USB
@@ -93,7 +94,7 @@ guarantee an immediate mechanical halt if connectivity or the MCU fails.
 The Android manifest enables cleartext for the ESP32's private local WebSocket
 prototype. Do not expose an unencrypted/unauthenticated controller to public Wi-Fi.
 Use TLS/authentication or another appropriate trust model for deployment outside
-an isolated robot network. iOS will require separate local-network permissions.
+an isolated robot network. OctoBot targets Android only; the iOS/Swift project was removed.
 
 ## UI design references
 
@@ -114,8 +115,18 @@ for Android-first local control, requiring **no additional runtime packages**.
 ```bash
 flutter analyze
 flutter test
-flutter run
+flutter devices
+flutter run -d <ANDROID_DEVICE_ID>
 ```
 
 Tests are provided under `test/`. Run them in a local Flutter SDK installation;
 this source package was prepared without a Flutter SDK in the execution environment.
+
+## Android-only target
+
+Only `flutter/android/` is maintained as a platform project. To avoid Flutter
+launching the connected iPhone, use `flutter devices` and explicitly choose an
+Android device/emulator ID with `flutter run -d <ANDROID_DEVICE_ID>`.
+
+Flutter UI is written in Dart; the Android host uses Kotlin. The iOS Runner,
+Swift sources and Xcode project are intentionally not tracked.

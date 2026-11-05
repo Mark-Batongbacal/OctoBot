@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:octobot/main.dart';
+import 'package:octobot/app/octobot_app.dart';
 
 void main() {
   testWidgets('renders the controller without fabricating live readings',
