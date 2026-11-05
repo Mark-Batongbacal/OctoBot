@@ -75,7 +75,7 @@ void MotionController::tick(const Snapshot& state, uint32_t now) {
   }
   const uint32_t dt = now - lastAt_;
   lastAt_ = now;
-  phase_ = fmodf(phase_ + fminf(dt, 80u) /
+  phase_ = fmodf(phase_ + fminf(static_cast<float>(dt), 80.0f) /
           GaitEngine::cycleMs(currentGait_,
               fminf(state.command.speed, cfg::kCommissioningSpeedCap)), 1.0f);
   for (int i=0;i<8;i++) {

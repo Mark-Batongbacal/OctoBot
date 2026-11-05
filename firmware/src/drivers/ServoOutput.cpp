@@ -10,7 +10,13 @@ bool ServoOutput::begin() {
   digitalWrite(cfg::kOutputEnablePin, HIGH);  // output DISABLED (OE active-high)
   Wire.begin(cfg::kServoSda, cfg::kServoScl, 100000);
   ready_ = pwm_.begin();
-  if (ready_) pwm_.setPWMFreq(cfg::kServoPwmHz);
+  if (ready_) {
+    pwm_.setPWMFreq(cfg::kServoPwmHz);
+    // Start hard-off. PWM is not exposed to servos before neutral is staged.
+    for (uint8_t channel = 0; channel < 16; ++channel) {
+      pwm_.setPWM(channel, 0, 4096);
+    }
+  }
   return ready_;
 }
 void ServoOutput::disable() {
@@ -18,7 +24,14 @@ void ServoOutput::disable() {
   enabled_ = false;
 }
 void ServoOutput::enable() {
-  if (!ready_) return;
+  if (!ready_ || enabled_) return;
+  // Load each CALIBRATED neutral pulse while the OE pin is still HIGH.
+  // Opening the gate before staging PWM risks an uncontrolled first target.
+  for (unsigned leg = 0; leg < 8; ++leg) {
+    const LegCalibration& cal = kLegCalibration[leg];
+    pulse(cal.horizontalChannel, cal.horizontalNeutralUs);
+    pulse(cal.verticalChannel, cal.verticalNeutralUs);
+  }
   digitalWrite(cfg::kOutputEnablePin, LOW);
   enabled_ = true;
 }

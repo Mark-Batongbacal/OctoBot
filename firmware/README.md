@@ -103,7 +103,9 @@ physical switch and LiPo-safe charging procedures.
 Angles are not hardcoded because the mechanics are unknown: `kLegCalibration`
 contains **placeholder** per-leg neutral microseconds and servo directions.
 Safe pulse clamp initially 1250–1750 µs. `cfg::kSwingUs` and `cfg::kLiftUs` are
-*small, initial* stroke amplitudes, not validated gait values.
+*small, initial* stroke amplitudes, not validated gait values. PCA9685 outputs
+remain gated during startup; individual calibrated neutral pulses are written
+before OE is enabled. A supported, unloaded first-arm test is still mandatory.
 A firmware commissioning speed cap of 45% applies even if Flutter selects
 100%; increase `kCommissioningSpeedCap` only after stability/load tests.
 
