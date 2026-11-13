@@ -7,6 +7,9 @@ Eight-legged ESP32 + Flutter mobile control project.
   Arduino-framework project. FreeRTOS handles motion, safety and sensing.
 - **Hardware installation:** follow the provisional pin/power instructions in
   [`firmware/README.md`](firmware/README.md) before connecting 16 SG90 servos.
+- **Directional control and commissioning:** read
+  [`docs/directional-control.md`](docs/directional-control.md) for the supported
+  forward/reverse/turn/curved-diagonal controls, and the unverified sideways motion.
 
 The legacy `.ino` files at the repository root are placeholders from the initial
 scaffold and **are not the active ESP32 controller**. Do not compile or upload
