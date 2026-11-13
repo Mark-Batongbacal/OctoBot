@@ -54,6 +54,23 @@ void main() {
     expect(reading.motionAuthorized, isTrue);
   });
 
+  test('missing obstacle or robot activity never authorizes motion', () {
+    final ready = {
+      'calibrated': true,
+      'hardware_armed': true,
+      'emergency_latched': false,
+      'safe_to_drive': true,
+      'state': 'standing',
+      'obstacle': false,
+    };
+    expect(RobotTelemetry.fromJson({...ready, 'obstacle': null}).motionAuthorized,
+        isFalse);
+    expect(RobotTelemetry.fromJson({...ready, 'state': null}).motionAuthorized,
+        isFalse);
+    expect(RobotTelemetry.fromJson({...ready, 'state': 'unknown'}).motionAuthorized,
+        isFalse);
+  });
+
   test('calibration, disarm, emergency and fault always block motion', () {
     final ready = {
       'calibrated': true,
@@ -61,6 +78,7 @@ void main() {
       'emergency_latched': false,
       'safe_to_drive': true,
       'state': 'standing',
+      'obstacle': false,
     };
     for (final override in [
       {'calibrated': false},
