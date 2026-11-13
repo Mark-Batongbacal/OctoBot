@@ -36,9 +36,28 @@ class RobotConnection extends ChangeNotifier {
   bool get hasMotion => forward.abs() > 0.001 || turn.abs() > 0.001;
   bool get telemetryFresh => telemetry.receivedAt != null &&
       DateTime.now().difference(telemetry.receivedAt!) < const Duration(seconds: 2);
+  /// The ESP32 decides whether its motors may move. A front obstacle only
+  /// blocks *forward* drive, not deliberate reversing or turning in place.
   bool get manualArmed => connected && telemetryFresh &&
-      telemetry.mode == 'manual' && telemetry.obstacle == false &&
-      telemetry.state != 'fault';
+      telemetry.mode == 'manual' && telemetry.motionAuthorized;
+
+  bool get frontBlocked => telemetryFresh && telemetry.obstacle == true;
+
+  String get motionLockReason {
+    if (!connected) return 'Connect to OctoBot to enable controls';
+    if (!telemetryFresh) return 'Waiting for fresh ESP32 telemetry';
+    if (telemetry.calibrated != true) return 'Servo calibration not approved on ESP32';
+    if (telemetry.emergencyLatched != false) return 'E-stop active or not reported';
+    if (telemetry.hardwareArmed != true) return 'Physical ARM switch is not enabled';
+    if (telemetry.safeToDrive != true || telemetry.state == 'fault') {
+      return 'Robot safety check failed (check front sensor and power)';
+    }
+    if (telemetry.mode != 'manual') return 'Request manual mode before driving';
+    if (telemetry.state == 'blocked') return 'Robot reported motion blocked';
+    return frontBlocked
+        ? 'Front obstacle: reverse and turn only'
+        : 'Drag to move · Release to stop';
+  }
 
   void _log(String message) {
     final stamp = DateTime.now();
@@ -96,6 +115,16 @@ class RobotConnection extends ChangeNotifier {
       switch (message['type']) {
         case 'telemetry':
           telemetry = RobotTelemetry.fromJson(message);
+          // Never keep sending a forward target after obstacle detection.
+          // Robot firmware independently applies the same restriction.
+          if (telemetry.obstacle == true && forward > 0) {
+            forward = 0;
+            if (hasMotion) {
+              _sendMotion();
+            } else {
+              _send({'type': 'stop'});
+            }
+          }
           notifyListeners();
           break;
         case 'event':
@@ -161,7 +190,10 @@ class RobotConnection extends ChangeNotifier {
   /// Joystick values: +forward means north, +turn means clockwise/right.
   void setMotion({required double nextForward, required double nextTurn}) {
     if (!manualArmed) return;
-    final newForward = nextForward.clamp(-1.0, 1.0).toDouble();
+    final requestedForward = nextForward.clamp(-1.0, 1.0).toDouble();
+    // The sole range sensor looks forward. Do not request travel into an
+    // obstacle, but keep reverse/rotation commands available to escape.
+    final newForward = frontBlocked && requestedForward > 0 ? 0.0 : requestedForward;
     final newTurn = nextTurn.clamp(-1.0, 1.0).toDouble();
     final wasMoving = hasMotion;
     forward = newForward.abs() < .10 ? 0 : newForward;
@@ -197,6 +229,10 @@ class RobotConnection extends ChangeNotifier {
 
   void requestMode(String requested) {
     if (!connected || !{'manual', 'autonomous'}.contains(requested)) return;
+    if (requested == 'autonomous' && (!telemetryFresh || !telemetry.motionAuthorized)) {
+      _log('Autonomous mode blocked: robot is not physically ready');
+      return;
+    }
     stop();
     _send({'type': 'mode', 'value': requested});
     _log('Requested $requested mode — waiting for robot acknowledgement');
