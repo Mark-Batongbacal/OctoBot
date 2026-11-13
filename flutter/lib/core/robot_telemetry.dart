@@ -37,7 +37,9 @@ class RobotTelemetry {
 
   bool get motionAuthorized => calibrated == true &&
       hardwareArmed == true && emergencyLatched == false &&
-      safeToDrive == true && state != 'fault' && state != 'blocked';
+      safeToDrive == true && obstacle != null &&
+      (state == 'stopped' || state == 'standing' ||
+       state == 'walking' || state == 'obstacle');
 
   static double? _number(dynamic value) => switch (value) {
     num n => n.toDouble(),
