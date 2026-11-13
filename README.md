@@ -116,5 +116,5 @@ The Flutter app's STOP is **not** a physical emergency cutoff.
 GitHub Actions now compiles the root **Arduino sketch with arduino-cli**,
 runs host gait-math unit tests and Flutter tests. Passing compilation is
 **not proof of hardware balance, foot clearance or servo safety**.
-A separate archived `firmware/` project contains the older PlatformIO
-version, but it is not part of the active Arduino upload workflow.
+Earlier PlatformIO source history remains available through Git history;
+only the Arduino IDE sketch and `src/` are maintained going forward.

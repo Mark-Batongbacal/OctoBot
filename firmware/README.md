@@ -1,3 +1,0 @@
-# ARCHIVED — Not used by Arduino IDE
-
-The active robot controller is now the repository-root [OctoBot.ino](../OctoBot.ino) and [src/](../src/) C++ modules. **Do not open this `firmware/` directory or its PlatformIO configuration for uploading**. This older source layout is preserved only as migration history. All updated movement and Flutter compatibility changes are in the Arduino IDE sketch. See [README](../README.md) and [directional-control documentation](../docs/directional-control.md).
