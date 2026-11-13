@@ -121,6 +121,11 @@ void RobotNetwork::telemetry(const Snapshot& s) {
   doc["calibrated"] = s.calibrated;
   doc["hardware_armed"] = s.hardwareArmed;
   doc["emergency_latched"] = s.emergencyLatched;
+  doc["safe_to_drive"] = s.safeToDrive;
+  // Report robot-applied values, not optimistic phone-side commands.
+  doc["applied_forward"] = s.appliedForward;
+  doc["applied_turn"] = s.appliedTurn;
+  doc["speed_cap"] = cfg::kCommissioningSpeedCap;
   doc["gait"] = gaitName(s.gait);
   String message;
   serializeJson(doc, message);
