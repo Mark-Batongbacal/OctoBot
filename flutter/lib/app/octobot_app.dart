@@ -55,7 +55,11 @@ class _OctoBotAppState extends State<OctoBotApp> {
             height: 72,
             selectedIndex: _tab,
             onDestinationSelected: (index) {
-              if (index != _tab && _tab == 0) _robot.stop();
+              // Leaving Drive stops active manual movement, but must not
+              // unexpectedly cancel autonomous mode or idle monitoring.
+              if (index != _tab && _tab == 0 && _robot.hasMotion) {
+                _robot.stop();
+              }
               setState(() => _tab = index);
             },
             destinations: const [
