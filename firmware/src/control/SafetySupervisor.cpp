@@ -32,12 +32,18 @@ void SafetySupervisor::tick(uint32_t now, bool physicalStopClosed,
     if (s.lastDriveMs != 0 && now - s.lastDriveMs <= cfg::kCommandTimeoutMs) {
       forward = s.command.forward;
       turn = s.command.turn;
-      if (s.obstacle && forward > 0) {
-        forward = turn = 0;
-        activity = Activity::Obstacle;
+      // The VL53L0X faces forward only. Block positive forward travel,
+      // but permit an explicitly requested reverse or in-place turn so the
+      // operator can back away. This does NOT bypass stale sensor faults.
+      if (s.obstacle && forward > 0.0f) {
+        forward = 0.0f;
+        activity = fabsf(turn) > 0.01f
+            ? Activity::Walking : Activity::Obstacle;
       } else if (fabsf(forward) > 0.01f || fabsf(turn) > 0.01f) {
         activity = Activity::Walking;
-      } else activity = Activity::Standing;
+      } else {
+        activity = s.obstacle ? Activity::Obstacle : Activity::Standing;
+      }
     } else activity = s.obstacle ? Activity::Obstacle : Activity::Standing;
   } else {
     // Only one front sensor: turn slowly to scan, never reverse autonomously.
