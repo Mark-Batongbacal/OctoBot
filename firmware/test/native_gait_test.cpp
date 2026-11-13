@@ -35,6 +35,18 @@ int main() {
   const auto r0=GaitEngine::sample(4,Gait::Reciprocal,0.40f,0,1);
   const auto r1=GaitEngine::sample(4,Gait::Reciprocal,0.41f,0,1);
   assert((l1.horizontal-l0.horizontal)*(r1.horizontal-r0.horizontal)<0);
+  // Wave swing order: L1, R2, L3, R4, R1, L2, R3, L4.
+  // kWaveSlots indexes legs [L1,L2,L3,L4,R1,R2,R3,R4].
+  const int waveOrder[8] = {0, 5, 2, 7, 4, 1, 6, 3};
+  for (int slot = 0; slot < 8; ++slot) {
+    const float cycle = (slot / 8.0f) + 0.02f;
+    for (int leg = 0; leg < 8; ++leg) {
+      const auto target = GaitEngine::sample(leg, Gait::Wave, cycle, .5f, 0);
+      if (leg == waveOrder[slot]) assert(target.lift > 0.01f);
+      else assert(target.lift < 0.0001f);
+    }
+  }
+
   // Symmetric reverse travel: invert horizontal foot strokes, preserve lift.
   for (int leg = 0; leg < 8; ++leg) {
     for (int step = 0; step < 50; ++step) {
