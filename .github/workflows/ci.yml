@@ -1,0 +1,50 @@
+name: OctoBot verification
+
+on:
+  push:
+    branches: [dev, master]
+  pull_request:
+    branches: [dev, master]
+
+jobs:
+  gait-math:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and run host gait tests
+        run: |
+          c++ -std=c++17 -Wall -Wextra -Werror -Ifirmware/include \
+            firmware/src/motion/GaitEngine.cpp firmware/test/native_gait_test.cpp \
+            -o /tmp/octobot-gait-test
+          /tmp/octobot-gait-test
+
+  flutter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Dependencies
+        working-directory: flutter
+        run: flutter pub get
+      - name: Static analysis
+        working-directory: flutter
+        run: flutter analyze
+      - name: Widget and telemetry tests
+        working-directory: flutter
+        run: flutter test
+
+  esp32-firmware:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install PlatformIO
+        run: python -m pip install platformio
+      - name: Compile ESP32 firmware (no flashing or motion unlock)
+        working-directory: firmware
+        run: pio run -e esp32dev
