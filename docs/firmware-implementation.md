@@ -1,8 +1,12 @@
+# Archived implementation note
+
+**The active and supported ESP32 upload target is now the Arduino IDE sketch `OctoBot.ino` in the repository root.** The older `firmware/` directory represents the previous PlatformIO staging layout and is not needed for Arduino IDE. See [README](../README.md), [directional control](directional-control.md), and [src/Config.h](../src/Config.h) for the current firmware and safety settings.
+
 # ESP32 Arduino firmware implementation — OctoBot
 
 ## Status
 
-C++/Arduino framework firmware has been added in `firmware/`, organized into
+The original implementation was built in `firmware/` and is now ported to the root Arduino IDE sketch and `src/`, organized into
 hardware drivers, gait logic, shared state, safety supervisor, and WebSocket
 communications. It is a **commissioning implementation**, with motor motion
 locked in `Config.h` until the hardware is verified. Flutter files were not
@@ -48,7 +52,7 @@ calculations following a STOP or sensor update by comparing version counters.
 - [ ] Assemble isolated positive servo rails and appropriate return wiring.
 - [ ] Install E-stop physical cutoff and NC sensing loop; OE pull-up.
 - [ ] Confirm center of mass supports reciprocal four-foot stance.
-- [ ] Compile with PlatformIO for ESP32 DevKit.
+- [ ] Compile and upload with Arduino IDE for ESP32 Dev Module.
 - [ ] Test all 16 servos individually without body load.
 - [ ] Validate distance sensor timeouts, front-stop threshold and stale data.
 - [ ] Measure stop-to-PWM response latency and body stabilization.
@@ -60,4 +64,4 @@ calculations following a STOP or sensor update by comparing version counters.
 - ESP32Async WebSocket path `/ws`: https://esp32async.github.io/ESPAsyncWebServer/setup/
 - Pololu VL53L0X API and timeout: https://github.com/pololu/vl53l0x-arduino
 - Adafruit PCA9685 and servo pulses: https://github.com/adafruit/Adafruit-PWM-Servo-Driver-Library
-- PlatformIO Arduino Core on ESP32: https://docs.platformio.org/en/latest/platforms/espressif32.html
+- Arduino ESP32 core: https://docs.espressif.com/projects/arduino-esp32/en/latest/

@@ -2,7 +2,7 @@
 
 Android-only field controller for the eight-legged OctoBot. This Flutter-only
 implementation replaces the starter page with a restrained, functional robotics
-control interface. **The modular Arduino-framework ESP32 firmware exists in `../firmware/`, but the motors remain locked until physical calibration and safety checks are approved.**
+control interface. **The real ESP32 sketch is [`../OctoBot.ino`](../OctoBot.ino), compiled with Arduino IDE alongside [`../src/`](../src/). Motor commands remain locked until physical calibration and safety checks are approved.**
 
 ## Run
 
@@ -91,7 +91,7 @@ versions of this repository.
 The **ESP32 firmware implements** obstacle-based forward inhibition, manual
 stop arbitration, a 450 ms drive timeout, 1200 ms link timeout and landing
 logic, but these behaviors require physical verification before floor testing. FreeRTOS task
-priorities and physical emergency power switching are firmware/hardware concerns.
+priorities and physical emergency power switching are robot firmware/hardware concerns.
 A phone-side STOP button is **not** a physical emergency-stop switch and cannot
 guarantee an immediate mechanical halt if connectivity or the MCU fails.
 

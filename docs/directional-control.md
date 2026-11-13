@@ -2,9 +2,8 @@
 
 ## Current software capabilities
 
-The active ESP32 firmware is the Arduino-framework PlatformIO project in
-`firmware/`, not the empty top-level `.ino` placeholders. Use the Android app
-in `flutter/`. The phone joins the ESP32's private Wi-Fi network and connects
+The active ESP32 firmware is the root Arduino IDE sketch `OctoBot.ino` plus
+its compiled C++ modules in `src/`. Use the Android app in `flutter/`. The phone joins the ESP32's private Wi-Fi network and connects
 to `ws://192.168.4.1/ws`.
 
 | Flutter held direction | Robot command (forward, turn) | Intended behavior |
@@ -76,7 +75,7 @@ verify side/rear clearance, cliffs, tipping, or traction.
    Verify NC E-stop GPIO27, ARM GPIO25, and OE GPIO26 pull-up.
 3. With robot supported off-ground and linkages unloaded, use the
    single-channel calibrator to verify each servo's physical direction
-   and limits. Update `firmware/include/Config.h` per joint.
+   and limits. Update `src/Config.h` per joint.
 4. Confirm a stable four-foot stance, foot clearance, current peaks,
    and that PWM-off does not let a leg collapse.
 5. Validate real VL53L0X readings (GPIO32/33 second I2C bus).
@@ -98,5 +97,5 @@ verify side/rear clearance, cliffs, tipping, or traction.
   Wi-Fi latency test, or terrain test has been completed by these changes.
 
 Use `flutter test` and `flutter analyze` in `flutter/`;
-`pio run -e esp32dev` in `firmware/`;
-and the native gait command in `firmware/README.md`.
+Arduino IDE **Verify / Upload** on `OctoBot.ino`;
+and the native gait command in the repository README.
