@@ -107,8 +107,9 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
           Icon(Icons.info_outline, color: OctoColors.teal, size: 21),
           SizedBox(width: 10),
           Expanded(child: Text(
-            'The Arduino firmware is not implemented yet. Connection, commands, '
-            'and telemetry use a proposed protocol and cannot control hardware until the ESP32 side matches it.',
+            'Use the modular PlatformIO Arduino-framework firmware in firmware/, '
+            'not the empty root-level .ino files. Motion remains locked until '
+            'servo calibration, physical E-stop and sensor checks are approved.',
             style: TextStyle(fontSize: 12, height: 1.45))),
         ]),
       ),
