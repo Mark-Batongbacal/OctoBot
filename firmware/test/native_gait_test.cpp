@@ -35,5 +35,35 @@ int main() {
   const auto r0=GaitEngine::sample(4,Gait::Reciprocal,0.40f,0,1);
   const auto r1=GaitEngine::sample(4,Gait::Reciprocal,0.41f,0,1);
   assert((l1.horizontal-l0.horizontal)*(r1.horizontal-r0.horizontal)<0);
+  // Symmetric reverse travel: invert horizontal foot strokes, preserve lift.
+  for (int leg = 0; leg < 8; ++leg) {
+    for (int step = 0; step < 50; ++step) {
+      const float cycle = step / 50.0f;
+      const auto forward = GaitEngine::sample(leg, Gait::Reciprocal, cycle, .6f, 0);
+      const auto reverse = GaitEngine::sample(leg, Gait::Reciprocal, cycle, -.6f, 0);
+      assert(std::fabs(forward.horizontal + reverse.horizontal) < 0.0001f);
+      assert(std::fabs(forward.lift - reverse.lift) < 0.0001f);
+      // In-place rotation: opposite sides always have opposite drive signs.
+      const auto cw = GaitEngine::sample(leg, Gait::Reciprocal, cycle, 0, .6f);
+      const auto ccw = GaitEngine::sample(leg, Gait::Reciprocal, cycle, 0, -.6f);
+      assert(std::fabs(cw.horizontal + ccw.horizontal) < 0.0001f);
+      assert(std::fabs(cw.lift - ccw.lift) < 0.0001f);
+    }
+  }
+
+  // A forward-right diagonal is differential steering: left stride grows,
+  // right stride shrinks. It is NOT a true lateral strafe.
+  const auto leftStraight = GaitEngine::sample(0, Gait::Reciprocal, .40f, .5f, 0);
+  const auto leftCurved = GaitEngine::sample(0, Gait::Reciprocal, .40f, .5f, .25f);
+  const auto rightStraight = GaitEngine::sample(4, Gait::Reciprocal, .40f, .5f, 0);
+  const auto rightCurved = GaitEngine::sample(4, Gait::Reciprocal, .40f, .5f, .25f);
+  assert(std::fabs(leftCurved.horizontal) > std::fabs(leftStraight.horizontal));
+  assert(std::fabs(rightCurved.horizontal) < std::fabs(rightStraight.horizontal));
+
+  // Faster selected speed produces a shorter reciprocal/wave cycle.
+  assert(GaitEngine::cycleMs(Gait::Reciprocal, .1f) >
+         GaitEngine::cycleMs(Gait::Reciprocal, .9f));
+  assert(GaitEngine::cycleMs(Gait::Wave, .1f) >
+         GaitEngine::cycleMs(Gait::Wave, .9f));
   std::cout << "Gait unit checks passed.\n";
 }
