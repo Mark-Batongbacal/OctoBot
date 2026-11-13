@@ -8,7 +8,7 @@ float wrap(float p) { p = p - floorf(p); return p < 0 ? p + 1 : p; }
 float smooth(float t) { return 0.5f - 0.5f * cosf(kPi * t); }
 // Wave order preserves reciprocal sequence but lifts ONE foot at a time.
 // slot 0..7: L1,R2,L3,R4,R1,L2,R3,L4
-constexpr int kWaveSlots[8] = {0, 5, 1, 7, 4, 2, 6, 3};
+constexpr int kWaveSlots[8] = {0, 5, 2, 7, 4, 1, 6, 3};
 }
 
 bool GaitEngine::swingGroupA(unsigned leg) {
