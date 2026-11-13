@@ -16,7 +16,7 @@ class DriveScreen extends StatelessWidget {
     return Column(children: [
       Expanded(child: PageFrame(children: [
       const PageHeading(title: 'Drive',
-        subtitle: 'Direct control / reciprocal 8-leg walking gait'),
+        subtitle: 'Hold to drive forward, reverse, rotate or steer diagonally'),
       _RobotCard(robot: robot),
       Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Row(children: [
@@ -42,11 +42,7 @@ class DriveScreen extends StatelessWidget {
           ),
         )),
         Text(
-          motionAllowed
-            ? 'Drag to move · Release to stop'
-            : robot.connected
-              ? 'Awaiting fresh manual-mode telemetry from robot'
-              : 'Connect to OctoBot to enable the joystick',
+          robot.motionLockReason,
           textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 12, color: OctoColors.muted),
         ),
@@ -58,6 +54,17 @@ class DriveScreen extends StatelessWidget {
             label: const Text('Request manual mode'),
           ),
         ],
+        const SizedBox(height: 18),
+        const Overline('HOLD-TO-MOVE DIRECTIONS'),
+        const SizedBox(height: 8),
+        _DirectionPad(robot: robot, enabled: motionAllowed),
+        const SizedBox(height: 6),
+        const Text(
+          'Left/right rotate the body; diagonals are curved steering, not lateral strafing. '
+          'Sideways is unavailable until the leg geometry is validated.',
+          style: TextStyle(fontSize: 11, color: OctoColors.muted),
+          textAlign: TextAlign.center,
+        ),
         const SizedBox(height: 20),
         Row(children: [
           const Expanded(child: Text('Walking speed', style: TextStyle(
@@ -71,6 +78,12 @@ class DriveScreen extends StatelessWidget {
           label: '${(robot.speed * 100).round()}%',
           onChanged: robot.setSpeed,
         ),
+        if (robot.telemetry.speedCap != null)
+          Text(
+            'ESP32 commissioning cap: ${(robot.telemetry.speedCap! * 100).round()}% '
+            '(higher app settings cannot override it)',
+            style: const TextStyle(fontSize: 11, color: OctoColors.muted),
+          ),
         const SizedBox(height: 4),
         const Overline('GAIT PROFILE'),
         const SizedBox(height: 10),
@@ -178,4 +191,76 @@ class _GaitButton extends StatelessWidget {
       Text(note, style: const TextStyle(fontSize: 10, color: OctoColors.muted)),
     ]),
   );
+}
+
+
+/// Press and hold for continuous commands; release/cancel always stops.
+/// Forward+turn inputs are differential steering, not true strafing.
+class _DirectionPad extends StatelessWidget {
+  const _DirectionPad({required this.robot, required this.enabled});
+  final RobotConnection robot;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) => Column(children: [
+    Row(children: [
+      _button('Forward left', Icons.north_west, 0.65, -0.35),
+      _button('Forward', Icons.north, 0.65, 0),
+      _button('Forward right', Icons.north_east, 0.65, 0.35),
+    ]),
+    const SizedBox(height: 6),
+    Row(children: [
+      _button('Turn left', Icons.rotate_left, 0, -0.6),
+      Expanded(child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 3),
+        child: OutlinedButton(
+          onPressed: robot.stop,
+          child: const Text('STOP'),
+        ),
+      )),
+      _button('Turn right', Icons.rotate_right, 0, 0.6),
+    ]),
+    const SizedBox(height: 6),
+    Row(children: [
+      _button('Reverse left', Icons.south_west, -0.65, -0.35),
+      _button('Reverse', Icons.south, -0.65, 0),
+      _button('Reverse right', Icons.south_east, -0.65, 0.35),
+    ]),
+  ]);
+
+  Widget _button(String label, IconData icon, double forward, double turn) =>
+      Expanded(child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 3),
+        child: Semantics(
+          label: 'Hold to $label; release to stop',
+          button: true,
+          enabled: enabled,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTapDown: enabled ? (_) => robot.setMotion(
+                nextForward: forward, nextTurn: turn) : null,
+            onTapUp: enabled ? (_) => robot.setMotion(
+                nextForward: 0, nextTurn: 0) : null,
+            onTapCancel: enabled ? () => robot.setMotion(
+                nextForward: 0, nextTurn: 0) : null,
+            child: Container(
+              height: 54,
+              decoration: BoxDecoration(
+                color: enabled ? OctoColors.tealWash : OctoColors.canvas,
+                border: Border.all(color: OctoColors.line),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, size: 21,
+                    color: enabled ? OctoColors.teal : OctoColors.muted),
+                  Text(label, textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 9, color: OctoColors.muted)),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ));
 }
