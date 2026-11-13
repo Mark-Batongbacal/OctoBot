@@ -25,6 +25,12 @@ cutoff have been tested on the physical spider.
   in confined spaces; no autonomous reverse.**
 - ESP32 SoftAP, `ws://192.168.4.1/ws` and Flutter-compatible JSON messages.
 
+For the compatible Flutter commands and exact hold-to-drive direction map,
+see [directional control and commissioning](../docs/directional-control.md).
+The physical robot must be calibrated before it can move. **Sideways strafing
+is not an implemented capability** and cannot be inferred from vertical-only
+rocking.
+
 ## Build with PlatformIO
 
 The maintainable Arduino implementation is `firmware/src/*.cpp`, not a single
