@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "RobotRuntime.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include "Config.h"
@@ -92,7 +93,7 @@ void failClosed(const char* reason) {
 }
 } // namespace
 
-void setup() {
+void octobotSetup() {
   Serial.begin(115200);
   pinMode(cfg::kOutputEnablePin, OUTPUT);
   digitalWrite(cfg::kOutputEnablePin, HIGH);
@@ -118,7 +119,7 @@ void setup() {
     Serial.println("SAFE MODE: calibration not approved; NO SERVO MOVEMENT.");
 }
 
-void loop() {
+void octobotLoop() {
   // Arduino's loopTask remains idle; all control runs in dedicated FreeRTOS tasks.
   delay(1000);
 }
