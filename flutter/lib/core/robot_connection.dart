@@ -38,7 +38,8 @@ class RobotConnection extends ChangeNotifier {
       DateTime.now().difference(telemetry.receivedAt!) < const Duration(seconds: 2);
   /// Unlock manual controls for protocol testing once manual-mode telemetry
   /// is fresh. This does NOT authorize physical movement: the ESP32 alone
-  /// enforces calibration, ARM, E-stop, front sensor and watchdog interlocks.
+  /// enforces ARM, E-stop, front sensor and watchdog interlocks. Firmware
+  /// permits only limited manual bench movement while uncalibrated.
   bool get manualArmed => connected && telemetryFresh &&
       telemetry.mode == 'manual';
 
@@ -49,7 +50,7 @@ class RobotConnection extends ChangeNotifier {
     if (!telemetryFresh) return 'Waiting for fresh ESP32 telemetry';
     if (telemetry.mode != 'manual') return 'Request manual mode before testing controls';
     if (telemetry.calibrated != true) {
-      return 'Test controls enabled; ESP32 servo calibration lock is still active';
+      return 'Bench test: servo calibration pending; keep robot supported off-ground';
     }
     if (telemetry.emergencyLatched != false) {
       return 'Test controls enabled; ESP32 E-stop prevents physical motion';
