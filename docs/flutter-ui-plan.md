@@ -1,49 +1,29 @@
-# OctoBot Flutter control UI — implementation handoff
+# OctoBot Flutter and Arduino IDE controller — implementation summary
 
-**Scope:** Flutter mobile app only. Existing Arduino sketch files are untouched.
+The Android Flutter app in `flutter/` communicates with the ESP32 sketch
+[`OctoBot.ino`](../OctoBot.ino) over the ESP32's private Wi-Fi and WebSocket
+`ws://192.168.4.1/ws`. All active ESP32 code is in `src/`.
 
-## Implemented
+**Current user-facing screens:** Drive, Autonomy, Monitor and Connect.
+Drive includes a 2-axis joystick, press-and-hold eight-direction pad,
+reciprocal/wave gait selection, walking-speed slider, and software STOP.
+The controller sends the same JSON drive protocol for joystick and buttons.
 
-- Real UI for Drive, Autonomy, Monitor, Connect with Material 3 and a neutral
-  hardware-instrument design. No AI image assets or remote UI dependencies.
-- Drawn robot schematic with **exactly eight legs**. Pair 1 and 3 are blue,
-  Pair 2 and 4 are orange. Diagram documents reciprocal swing phases separately.
-- 2-axis joystick with normalized forward/turn, dead zone, return-to-center,
-  stop-on-release and stop-on-navigation-away.
-- Selectable primary reciprocal/wave gait and speed setting.
-- WebSocket client with connect/disconnect/error/reconnect attempt,
-  JSON command encoding, continuous active motion commands and heartbeats.
-- Actual telemetry only: no fabricated battery, distance or gait state.
-- Explicit locking of motion until connected with ESP32-reported manual mode.
-- Android local-network permissions and tests.
+**Safety conditions:** Control is disabled if real robot telemetry is stale,
+un-calibrated, physically disarmed, in E-stop, in fault, or otherwise denied
+by the firmware. Forward travel is blocked on a front obstacle; reverse and
+stationary turns remain permitted when the front sensor is valid and all
+other hardware checks pass. Releasing/cancelling a press commands STOP.
+ESP32 watchdogs independently expire stale commands and Wi-Fi control.
 
-## Pending until the instructor authorizes Arduino development
+**Physical grouping:** A = L1,R2,L3,R4; B = R1,L2,R3,L4.
+Forward/reverse and turns use the servo gait engine; diagonals combine
+forward+turn into a curved path, **not** straight sideways translation.
+Experimental sideways `bop-bop` is not implemented.
 
-- Implement and verify the exact WebSocket endpoint and JSON protocol.
-- ESP32 safety state machine, FreeRTOS tasks, physical emergency-stop behavior.
-- Servo calibration UI/data contract (do not send raw positions until firmware
-  provides safe mechanical limits and exclusive maintenance-mode authorization).
-- Sensor thresholds, fault codes, battery interpretation and gait phase reporting.
-- Real hardware connectivity tests, stop latency measurement and recovery policy.
+**Outstanding hardware tests:** mechanical servo calibration, servo power
+rails, E-stop cutoff, sensor readings, gait support/traction, stop latency,
+and phone-to-robot movement tests on a securely supported chassis.
 
-## Intentional design constraints
-
-Mobile-first, 48dp-or-larger primary interactive targets, no fictional readings,
-no uncontrolled use of all 16 servos from Flutter. Commands express desired
-movement rather than raw SG90 angles. 'Diagonal' joystick operation means forward
-plus turn: a curved trajectory, not guaranteed sideways strafe.
-
-## Deployment
-
-Apply this overlay at the **root** of Mark-Batongbacal/OctoBot and then run
-`cd flutter && flutter pub get && flutter analyze && flutter test && flutter devices && flutter run -d <ANDROID_DEVICE_ID>`.
-No files under the root firmware scaffold are altered.
-
-## Android-only correction
-
-Widget tests import `package:octobot/app/octobot_app.dart` directly instead of
-`package:octobot/main.dart`, which does not re-export `OctoBotApp`.
-
-The unused iOS/Swift Xcode runner and iOS Flutter platform metadata have been
-removed. Select an Android device explicitly when running (`flutter devices`,
-then `flutter run -d <ANDROID_DEVICE_ID>`).
+For install/build instructions, see the [root README](../README.md) and
+the [direction map](directional-control.md).

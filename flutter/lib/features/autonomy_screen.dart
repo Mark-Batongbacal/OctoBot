@@ -10,7 +10,11 @@ class AutonomyScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final active = robot.telemetryFresh && robot.telemetry.mode == 'autonomous';
+    final active = robot.telemetryFresh &&
+        robot.telemetry.mode == 'autonomous' &&
+        robot.telemetry.motionAuthorized;
+    final canRequestAutonomy = robot.connected &&
+        robot.telemetryFresh && robot.telemetry.motionAuthorized;
     final obstacle = robot.telemetry.obstacle;
     return PageFrame(children: [
       const PageHeading(title: 'Autonomy',
@@ -35,11 +39,18 @@ class AutonomyScreen extends StatelessWidget {
         ]),
         const SizedBox(height: 24),
         FilledButton.icon(
-          onPressed: robot.connected
+          onPressed: active || canRequestAutonomy
               ? () => robot.requestMode(active ? 'manual' : 'autonomous') : null,
           icon: Icon(active ? Icons.pause_circle_outline : Icons.play_arrow),
           label: Text(active ? 'Request manual mode' : 'Request autonomous mode'),
         ),
+        if (robot.connected && !canRequestAutonomy && !active)
+          const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: Text('Autonomy locked until ESP32 reports calibrated motors, '
+              'physical ARM, E-stop clear and a valid front sensor.',
+              style: TextStyle(fontSize: 11, color: OctoColors.muted)),
+          ),
         const SizedBox(height: 10),
         OutlinedButton.icon(
           onPressed: robot.connected ? robot.stop : null,

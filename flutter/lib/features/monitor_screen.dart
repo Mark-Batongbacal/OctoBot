@@ -38,6 +38,24 @@ class MonitorScreen extends StatelessWidget {
         const Divider(height: 1, color: OctoColors.line),
         RowInfo(label: 'Robot state', value: telemetry.state ?? 'Not reported'),
         const Divider(height: 1, color: OctoColors.line),
+        RowInfo(label: 'Calibration', value: telemetry.calibrated == null
+          ? 'Not reported' : telemetry.calibrated! ? 'Approved on ESP32' : 'LOCKED'),
+        const Divider(height: 1, color: OctoColors.line),
+        RowInfo(label: 'Physical ARM', value: telemetry.hardwareArmed == null
+          ? 'Not reported' : telemetry.hardwareArmed! ? 'Enabled' : 'Disarmed'),
+        const Divider(height: 1, color: OctoColors.line),
+        RowInfo(label: 'E-stop', value: telemetry.emergencyLatched == null
+          ? 'Not reported' : telemetry.emergencyLatched! ? 'Latched' : 'Clear'),
+        const Divider(height: 1, color: OctoColors.line),
+        RowInfo(label: 'Motion permission', value: telemetry.safeToDrive == null
+          ? 'Not reported' : telemetry.safeToDrive! ? 'Allowed by ESP32' : 'BLOCKED'),
+        const Divider(height: 1, color: OctoColors.line),
+        RowInfo(label: 'Applied forward', value: telemetry.appliedForward == null
+          ? 'Not reported' : telemetry.appliedForward!.toStringAsFixed(2)),
+        const Divider(height: 1, color: OctoColors.line),
+        RowInfo(label: 'Applied turn', value: telemetry.appliedTurn == null
+          ? 'Not reported' : telemetry.appliedTurn!.toStringAsFixed(2)),
+        const Divider(height: 1, color: OctoColors.line),
         RowInfo(label: 'Gait phase', value: telemetry.gaitPhase ?? 'Not reported'),
         const Divider(height: 1, color: OctoColors.line),
         RowInfo(label: 'Obstacle', value: telemetry.obstacle == null
@@ -68,8 +86,8 @@ class MonitorScreen extends StatelessWidget {
             const SizedBox(height: 12),
           ],
       ])),
-      const Text('All reported values depend on the future Arduino/ESP32 protocol. '
-          'The safety controller must run on the robot, not this screen.',
+      const Text('These are ESP32-reported values; physical servo motion, balance and '
+          'obstacle avoidance still require hardware commissioning.',
         style: TextStyle(fontSize: 11.5, color: OctoColors.muted)),
     ]);
   }
