@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Verify physical servo channel mapping
+        run: python3 tests/test_servo_mapping.py
       - name: Compile and run pure C++ gait tests
         run: |
           c++ -std=c++17 -Wall -Wextra -Werror -Isrc \
