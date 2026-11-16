@@ -107,9 +107,10 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
           Icon(Icons.info_outline, color: OctoColors.teal, size: 21),
           SizedBox(width: 10),
           Expanded(child: Text(
-            'Use the modular PlatformIO Arduino-framework firmware in firmware/, '
-            'not the empty root-level .ino files. Motion remains locked until '
-            'servo calibration, physical E-stop and sensor checks are approved.',
+            'Upload the root OctoBot.ino with its src/ modules through Arduino IDE. '
+            'Flutter controls accept manual-mode commands for testing once telemetry arrives, '
+            'but ESP32 safety checks still block physical motion until calibration, ARM, '
+            'E-stop and sensor requirements are satisfied.',
             style: TextStyle(fontSize: 12, height: 1.45))),
         ]),
       ),
