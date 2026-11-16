@@ -26,9 +26,20 @@ center-of-gravity and contact support are verified on the real robot.
 
 ## Leg wiring and reciprocal groups
 
-The channel mapping assumes CH0/1=L1 (horizontal/lift), CH2/3=L2,
-CH4/5=L3, CH6/7=L4, CH8/9=R1, CH10/11=R2,
-CH12/13=R3, CH14/15=R4.
+The physical identification numbers are **1–16**, but PCA9685 outputs are **CH0–CH15**. Assuming the supplied rows run front to rear (L1/R1 through L4/R4), and each pair is horizontal then vertical, the new assignments are:
+
+| Physical leg | Identified horizontal / vertical | PCA9685 horizontal / vertical | Gait group |
+| --- | --- | --- | --- |
+| L1 | 8 / 7 | CH7 / CH6 | A |
+| L2 | 4 / 6 | CH3 / CH5 | B |
+| L3 | 1 / 2 | CH0 / CH1 | A |
+| L4 | 5 / 3 | CH4 / CH2 | B |
+| R1 | 14 / 16 | CH13 / CH15 | B |
+| R2 | 13 / 15 | CH12 / CH14 | A |
+| R3 | 10 / 9 | CH9 / CH8 | B |
+| R4 | 11 / 12 | CH10 / CH11 | A |
+
+This changes only the servo-to-leg configuration. The GaitEngine logical leg indices, reciprocal group alternation, wave order, and left/right steering remain unchanged. Verify hip/knee assumptions, front-to-rear orientation, servo neutral positions, sign directions, and physical safety before approving calibration.
 
 Group **A = L1 R2 L3 R4**; Group **B = R1 L2 R3 L4**.
 A swings as B supports, then B swings as A supports.
