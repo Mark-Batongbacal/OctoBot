@@ -16,7 +16,7 @@ class DriveScreen extends StatelessWidget {
     return Column(children: [
       Expanded(child: PageFrame(children: [
       const PageHeading(title: 'Drive',
-        subtitle: 'Hold to drive forward, reverse, rotate or steer diagonally'),
+        subtitle: 'Connected manual controls enabled for command testing; ESP32 decides when motors may move'),
       _RobotCard(robot: robot),
       Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Row(children: [
