@@ -36,27 +36,34 @@ class RobotConnection extends ChangeNotifier {
   bool get hasMotion => forward.abs() > 0.001 || turn.abs() > 0.001;
   bool get telemetryFresh => telemetry.receivedAt != null &&
       DateTime.now().difference(telemetry.receivedAt!) < const Duration(seconds: 2);
-  /// The ESP32 decides whether its motors may move. A front obstacle only
-  /// blocks *forward* drive, not deliberate reversing or turning in place.
+  /// Unlock manual controls for protocol testing once manual-mode telemetry
+  /// is fresh. This does NOT authorize physical movement: the ESP32 alone
+  /// enforces calibration, ARM, E-stop, front sensor and watchdog interlocks.
   bool get manualArmed => connected && telemetryFresh &&
-      telemetry.mode == 'manual' && telemetry.motionAuthorized;
+      telemetry.mode == 'manual';
 
   bool get frontBlocked => telemetryFresh && telemetry.obstacle == true;
 
   String get motionLockReason {
     if (!connected) return 'Connect to OctoBot to enable controls';
     if (!telemetryFresh) return 'Waiting for fresh ESP32 telemetry';
-    if (telemetry.calibrated != true) return 'Servo calibration not approved on ESP32';
-    if (telemetry.emergencyLatched != false) return 'E-stop active or not reported';
-    if (telemetry.hardwareArmed != true) return 'Physical ARM switch is not enabled';
-    if (telemetry.safeToDrive != true || telemetry.state == 'fault') {
-      return 'Robot safety check failed (check front sensor and power)';
+    if (telemetry.mode != 'manual') return 'Request manual mode before testing controls';
+    if (telemetry.calibrated != true) {
+      return 'Test controls enabled; ESP32 servo calibration lock is still active';
     }
-    if (telemetry.mode != 'manual') return 'Request manual mode before driving';
+    if (telemetry.emergencyLatched != false) {
+      return 'Test controls enabled; ESP32 E-stop prevents physical motion';
+    }
+    if (telemetry.hardwareArmed != true) {
+      return 'Test controls enabled; physical ARM switch is not enabled';
+    }
+    if (telemetry.safeToDrive != true || telemetry.state == 'fault') {
+      return 'Test controls enabled; ESP32 safety checks still block physical motion';
+    }
     if (telemetry.state == 'blocked') return 'Robot reported motion blocked';
     return frontBlocked
         ? 'Front obstacle: reverse and turn only'
-        : 'Drag to move · Release to stop';
+        : 'Hold to drive · Release to stop';
   }
 
   void _log(String message) {
@@ -176,7 +183,7 @@ class RobotConnection extends ChangeNotifier {
     if (!connected) return;
     if (hasMotion && !manualArmed) {
       stop();
-      _log('Motion stopped: telemetry/mode no longer safe');
+      _log('Motion stopped: connection telemetry stale or manual mode exited');
     } else if (hasMotion) {
       _sendMotion();
     }
