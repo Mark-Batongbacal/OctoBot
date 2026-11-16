@@ -22,7 +22,10 @@ void MotionController::land(uint32_t now) {
 void MotionController::tick(const Snapshot& state, uint32_t now) {
   // Critical hardware faults disable PWM. For communication/sensor timeouts,
   // keep servo holding torque and safely lower any lifted feet, if already armed.
-  const bool hardFault = !driver_.ready() || !cfg::kServoCalibrationApproved ||
+  const bool benchTestAllowed = cfg::kAllowUncalibratedManualTest &&
+      state.mode == Mode::Manual;
+  const bool hardFault = !driver_.ready() ||
+      (!cfg::kServoCalibrationApproved && !benchTestAllowed) ||
       !state.hardwareArmed || state.emergencyLatched;
   if (hardFault) {
     driver_.disable();
@@ -39,7 +42,7 @@ void MotionController::tick(const Snapshot& state, uint32_t now) {
     return;
   }
   if (!outputsOn_) {
-    // Physical chassis MUST be supported and calibrated before this is enabled.
+    // When calibration is pending, manual bench motion requires secure off-ground support.
     driver_.enable();
     outputsOn_ = true;
     for (int i=0;i<8;i++) {
