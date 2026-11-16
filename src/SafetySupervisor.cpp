@@ -14,7 +14,10 @@ void SafetySupervisor::tick(uint32_t now, bool physicalStopClosed,
       (now - s.sensorAtMs < cfg::kSensorStaleMs);
   const bool batterySafe = !cfg::kBatteryDividerInstalled ||
       (s.batteryKnown && s.batteryVoltage >= cfg::kLowBatteryVolts);
-  const bool hardwareSafe = cfg::kServoCalibrationApproved && driverReady &&
+  const bool calibrationPermitsManualTest = cfg::kServoCalibrationApproved ||
+      (cfg::kAllowUncalibratedManualTest && s.mode == Mode::Manual);
+  // Bench mode bypasses ONLY calibration approval; physical interlocks stay on.
+  const bool hardwareSafe = calibrationPermitsManualTest && driverReady &&
       physicalArm && !emergencyLatched_ && heartbeatFresh &&
       distanceFresh && batterySafe;
   float forward = 0, turn = 0;
