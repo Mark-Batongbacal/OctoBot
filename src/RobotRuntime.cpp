@@ -115,8 +115,12 @@ void octobotSetup() {
       xTaskCreatePinnedToCore(telemetryTask, "Telemetry", 6144, nullptr, 1,
                               nullptr, 0) != pdPASS)
     failClosed("Worker task allocation");
-  if (!cfg::kServoCalibrationApproved)
-    Serial.println("SAFE MODE: calibration not approved; NO SERVO MOVEMENT.");
+  if (!cfg::kServoCalibrationApproved) {
+    if (cfg::kAllowUncalibratedManualTest)
+      Serial.println("BENCH TEST: limited MANUAL PWM allowed only with ARM, E-stop, sensor and link healthy.");
+    else
+      Serial.println("SAFE MODE: calibration not approved; NO SERVO MOVEMENT.");
+  }
 }
 
 void octobotLoop() {
