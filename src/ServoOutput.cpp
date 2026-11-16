@@ -45,8 +45,13 @@ void ServoOutput::pulse(uint8_t channel, float us) {
 void ServoOutput::writeLeg(unsigned leg, float footHorizontal, float footLift) {
   if (!ready_ || !enabled_ || leg >= 8) return;
   const LegCalibration& cal = kLegCalibration[leg];
+  // Restrict joint travel when the actual centers/signs remain unverified.
+  const bool benchTest = !cfg::kServoCalibrationApproved &&
+      cfg::kAllowUncalibratedManualTest;
+  const float swing = benchTest ? cfg::kUncalibratedTestSwingUs : cfg::kSwingUs;
+  const float lift = benchTest ? cfg::kUncalibratedTestLiftUs : cfg::kLiftUs;
   pulse(cal.horizontalChannel, cal.horizontalNeutralUs +
-        cal.horizontalSign * footHorizontal * cfg::kSwingUs);
+        cal.horizontalSign * footHorizontal * swing);
   pulse(cal.verticalChannel, cal.verticalNeutralUs +
-        cal.liftSign * footLift * cfg::kLiftUs);
+        cal.liftSign * footLift * lift);
 }
