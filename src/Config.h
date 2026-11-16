@@ -5,6 +5,12 @@
 // kServoCalibrationApproved to true. Firmware ships locked by design.
 namespace cfg {
 constexpr bool kServoCalibrationApproved = false;
+// TEMPORARY supervised bench mode. Does not bypass ARM, E-stop,
+// PCA9685 detection, sensor, link timeout, or command watchdog.
+// Autonomous gait remains blocked until calibration is approved.
+constexpr bool kAllowUncalibratedManualTest = true;
+constexpr float kUncalibratedTestSwingUs = 40.0f;
+constexpr float kUncalibratedTestLiftUs = 40.0f;
 constexpr bool kBatteryDividerInstalled = false;
 // Replace before using outside a private, isolated demonstration area.
 constexpr char kApSsid[] = "OctoBot";
@@ -33,7 +39,7 @@ constexpr uint16_t kServoMaxUs = 1750;
 constexpr float kSwingUs = 100.0f; // initial small stroke, tune only on a supported rig
 constexpr float kLiftUs = 120.0f;  // initial small lift, tune only on a supported rig
 constexpr uint32_t kLandingTimeMs = 360;
-constexpr float kCommissioningSpeedCap = 0.45f; // raise only after stable load tests
+constexpr float kCommissioningSpeedCap = 0.15f; // limited bench-test speed
 constexpr uint32_t kMaxWebSocketPacketBytes = 256;
 }
 
