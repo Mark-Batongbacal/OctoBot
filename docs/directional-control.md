@@ -46,11 +46,16 @@ A swings as B supports, then B swings as A supports.
 Wave fallback lifts one foot at a time, in this sequence:
 **L1 R2 L3 R4 R1 L2 R3 L4**.
 
-`kLegCalibration` neutral positions and sign orientations are still
-placeholders. **Do not set `kServoCalibrationApproved=true` before
-independently confirming every joint's center, safe endpoints, lift
-direction, horizontal forward direction, and physical E-stop function.**
-The app cannot authorize servo movement while calibration is locked.
+`kLegCalibration` neutrals and directions are still **unverified placeholders**.
+For limited testing, `kAllowUncalibratedManualTest=true` now permits MANUAL
+movement with `kServoCalibrationApproved=false`, provided the physical ARM,
+E-stop, PCA9685, front distance sensor, Wi-Fi heartbeat and motion watchdog
+requirements are satisfied. **Autonomous movement stays calibration-locked.**
+Uncalibrated motion is limited to 40 microseconds of hip swing/lift and a 15%
+gait speed cap. Place the robot securely off-ground, ensure its independent
+servo power cutoff works, and keep clear of moving links. A 1500 microsecond
+neutral is not guaranteed to be mechanically safe. Restore the test flag to
+`false` once physical calibration is complete.
 
 ## Commands and motion authorization
 
@@ -63,15 +68,16 @@ The Flutter joystick and directional controls send the SAME existing
 
 Releasing/canceling the gesture sends `{"type":"stop"}`; the ESP32
 independently expires drive messages after 450ms and stops on link loss.
-The app checks fresh ESP32 telemetry for `calibrated`,
-`hardware_armed`, `emergency_latched`, `safe_to_drive`, and manual mode
-before allowing motion. An obstacle directly ahead blocks **positive
+The Flutter app sends manual commands when connected with fresh manual-mode
+telemetry; the ESP32 independently enforces physical ARM, E-stop, front sensor,
+link heartbeat, command watchdog and calibration (except the temporary
+limited manual test exception). An obstacle directly ahead blocks **positive
 forward** requests but allows reverse or in-place turning *only while the
 front sensor remains valid and all hardware safety conditions pass*.
 
 ESP32 telemetry includes `applied_forward`, `applied_turn`, and
 `speed_cap` in addition to the earlier safety fields. The firmware
-limits commissioning speed to 45% even if Flutter requests 100%.
+limits commissioning speed to 15% even if Flutter requests 100%.
 
 Autonomous navigation is **not** true route planning: the existing
 front-only obstacle sensor triggers slow rotate-and-check. It cannot
@@ -91,9 +97,10 @@ verify side/rear clearance, cliffs, tipping, or traction.
    and that PWM-off does not let a leg collapse.
 5. Validate real VL53L0X readings (GPIO32/33 second I2C bus).
    The firmware denies motion with missing or stale front sensor data.
-6. **Only then** locally approve calibration and try the Flutter
-   wave gait at minimum speed, then reciprocal, backward, turns,
-   and curved diagonals. Keep the physical E-stop within reach.
+6. First use limited bench mode with the robot supported off-ground to
+   establish the actual neutral positions and joint directions. Before
+   floor-supported gait tests, approve calibration only after confirming
+   every servo and turn the temporary test flag OFF.
 7. Test STOP, release/cancel, app switching tabs, stale telemetry,
    WebSocket disconnect, E-stop and obstacle behavior with the robot
    safely supported before any ground-supported walking.
