@@ -28,10 +28,13 @@ mode acknowledgement or battery readings are simulated.
 - **Monitor** — battery voltage, distance, current mode/state/phase, event log.
 - **Connect** — editable WebSocket URL, connection lifecycle and setup guidance.
 
-Motion controls are disabled until the connection has fresh manual-mode telemetry
-with `calibrated=true`, `hardware_armed=true`, `emergency_latched=false` and
-`safe_to_drive=true`. A front obstacle blocks **forward** commands but permits
-reverse and in-place turns if the sensor remains valid. Releasing a joystick
+**Flutter-side controls are unlocked for command testing** after a WebSocket
+connection returns fresh telemetry with `mode=manual`. Flutter does not require
+`calibrated=true`, `hardware_armed=true` or `safe_to_drive=true` to transmit
+a manual drive command. **This does not unlock the servos:** ESP32 firmware still
+enforces calibration, ARM, E-stop, a valid front sensor, and other safety checks.
+A front obstacle blocks **forward** commands in Flutter and the firmware.
+Releasing a joystick
 or directional hold control transmits STOP. Leaving Drive cancels **active
 manual movement**, not idle monitoring or autonomous operation. Link loss
 resets phone-side movement, with a separate ESP32-side watchdog.
