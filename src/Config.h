@@ -47,13 +47,18 @@ struct LegCalibration {
   int8_t horizontalSign;
   int8_t liftSign;
 };
+// Physical identification numbers are 1-based (1..16); PCA9685 uses CH0..CH15.
+// Assuming rows supplied front-to-rear: row 1 L1/R1, ..., row 4 L4/R4.
+// For each pair, the first is assumed horizontal (hip), second vertical (knee).
+// Confirm joint types and servo directions during supported off-ground calibration.
+// KEEP logical order L1,L2,L3,L4,R1,R2,R3,R4 for existing gait calculations.
 constexpr LegCalibration kLegCalibration[8] = {
-  {0, 1, 1500, 1500, +1, +1}, // L1
-  {2, 3, 1500, 1500, +1, +1}, // L2
-  {4, 5, 1500, 1500, +1, +1}, // L3
-  {6, 7, 1500, 1500, +1, +1}, // L4
-  {8, 9, 1500, 1500, -1, -1},// R1
-  {10,11,1500, 1500, -1, -1},// R2
-  {12,13,1500, 1500, -1, -1},// R3
-  {14,15,1500, 1500, -1, -1} // R4
+  { 7,  6, 1500, 1500, +1, +1}, // L1 observed 8/7 => CH7/CH6
+  { 3,  5, 1500, 1500, +1, +1}, // L2 observed 4/6 => CH3/CH5
+  { 0,  1, 1500, 1500, +1, +1}, // L3 observed 1/2 => CH0/CH1
+  { 4,  2, 1500, 1500, +1, +1}, // L4 observed 5/3 => CH4/CH2
+  {13, 15, 1500, 1500, -1, -1}, // R1 observed 14/16 => CH13/CH15
+  {12, 14, 1500, 1500, -1, -1}, // R2 observed 13/15 => CH12/CH14
+  { 9,  8, 1500, 1500, -1, -1}, // R3 observed 10/9 => CH9/CH8
+  {10, 11, 1500, 1500, -1, -1}, // R4 observed 11/12 => CH10/CH11
 };
