@@ -9,7 +9,19 @@ void main() {
     expect(find.text('OCTOBOT'), findsOneWidget);
     expect(find.text('OFFLINE'), findsOneWidget);
     expect(find.text('STOP MOTION'), findsOneWidget);
+    expect(find.text('FORWARD'), findsOneWidget);
+    expect(find.text('BACKWARD'), findsOneWidget);
+    expect(find.text('Autonomy'), findsNothing);
+    expect(find.text('OCTOPOD / TOP VIEW'), findsNothing);
     expect(find.text('Connect to OctoBot to enable controls'), findsOneWidget);
+  });
+
+  testWidgets('monitor shows unavailable sensor data while offline',
+      (tester) async {
+    await tester.pumpWidget(const OctoBotApp());
+    await tester.tap(find.text('Monitor').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Sensor data unavailable'), findsOneWidget);
   });
 
   testWidgets('can navigate to connection settings while offline',

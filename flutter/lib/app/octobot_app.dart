@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../core/robot_connection.dart';
-import '../features/autonomy_screen.dart';
 import '../features/connection_screen.dart';
 import '../features/drive_screen.dart';
 import '../features/monitor_screen.dart';
@@ -36,11 +35,10 @@ class _OctoBotAppState extends State<OctoBotApp> {
         body: SafeArea(
           bottom: false,
           child: Column(children: [
-            _TopBar(robot: _robot, onConnect: () => setState(() => _tab = 3)),
+            _TopBar(robot: _robot, onConnect: () => setState(() => _tab = 2)),
             Expanded(
               child: IndexedStack(index: _tab, children: [
                 DriveScreen(robot: _robot),
-                AutonomyScreen(robot: _robot),
                 MonitorScreen(robot: _robot),
                 ConnectionScreen(robot: _robot),
               ]),
@@ -55,8 +53,6 @@ class _OctoBotAppState extends State<OctoBotApp> {
             height: 72,
             selectedIndex: _tab,
             onDestinationSelected: (index) {
-              // Leaving Drive stops active manual movement, but must not
-              // unexpectedly cancel autonomous mode or idle monitoring.
               if (index != _tab && _tab == 0 && _robot.hasMotion) {
                 _robot.stop();
               }
@@ -65,12 +61,10 @@ class _OctoBotAppState extends State<OctoBotApp> {
             destinations: const [
               NavigationDestination(icon: Icon(Icons.gamepad_outlined),
                 selectedIcon: Icon(Icons.gamepad), label: 'Drive'),
-              NavigationDestination(icon: Icon(Icons.explore_outlined),
-                selectedIcon: Icon(Icons.navigation), label: 'Autonomy'),
               NavigationDestination(icon: Icon(Icons.monitor_heart_outlined),
                 selectedIcon: Icon(Icons.monitor_heart), label: 'Monitor'),
-              NavigationDestination(icon: Icon(Icons.tune_outlined),
-                selectedIcon: Icon(Icons.tune), label: 'Connect'),
+              NavigationDestination(icon: Icon(Icons.wifi_outlined),
+                selectedIcon: Icon(Icons.wifi), label: 'Connect'),
             ],
           ),
         ),
@@ -102,7 +96,7 @@ class _TopBar extends StatelessWidget {
         children: [
           Text('OCTOBOT', style: TextStyle(fontSize: 16, letterSpacing: 1.6,
               fontWeight: FontWeight.w900, color: OctoColors.ink)),
-          Overline('FIELD CONTROLLER'),
+          Overline('MANUAL CONTROLLER'),
         ],
       )),
       InkWell(

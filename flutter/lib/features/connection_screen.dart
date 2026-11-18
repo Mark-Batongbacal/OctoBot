@@ -97,7 +97,7 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
         _SetupStep(n: '3', title: 'Set the endpoint',
           description: 'Match the WebSocket address configured in ESP32 firmware.'),
         _SetupStep(n: '4', title: 'Check telemetry',
-          description: 'Movement unlocks only after the robot reports manual mode.'),
+          description: 'Manual controls unlock after fresh ESP32 telemetry arrives.'),
       ])),
       Container(
         padding: const EdgeInsets.all(15),
@@ -107,10 +107,10 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
           Icon(Icons.info_outline, color: OctoColors.teal, size: 21),
           SizedBox(width: 10),
           Expanded(child: Text(
-            'Upload the root OctoBot.ino with its src/ modules through Arduino IDE. '
-            'Flutter controls accept manual-mode commands for testing once telemetry arrives, '
-            'but ESP32 safety checks still block physical motion until calibration, ARM, '
-            'E-stop and sensor requirements are satisfied.',
+            'Connect to ws://192.168.4.1/ws while on the robot Wi-Fi. '
+            'Forward and backward controls send signed drive commands; the ESP32 '
+            'firmware must implement both directions. Obstacle readings are warnings '
+            'only in Flutter. Keep a physical emergency power cutoff.',
             style: TextStyle(fontSize: 12, height: 1.45))),
         ]),
       ),

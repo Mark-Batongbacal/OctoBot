@@ -10,105 +10,69 @@ class MonitorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final telemetry = robot.telemetry;
-    final last = telemetry.receivedAt;
-    final stamp = last == null
-        ? 'No telemetry received'
-        : 'Last update ${last.hour.toString().padLeft(2, '0')}:${last.minute.toString().padLeft(2, '0')}:${last.second.toString().padLeft(2, '0')}';
+    final t = robot.telemetry;
+    final fresh = robot.telemetryFresh;
+    final valid = fresh && t.distanceCm != null;
+    final warning = valid && t.obstacle == true;
+    final last = t.receivedAt;
+    final updated = last == null ? 'No telemetry received'
+      : 'Last update ${last.hour.toString().padLeft(2, '0')}:${last.minute.toString().padLeft(2, '0')}:${last.second.toString().padLeft(2, '0')}';
+
     return PageFrame(children: [
       const PageHeading(title: 'Monitor',
-        subtitle: 'Actual telemetry from the ESP32, never simulated'),
-      Row(children: [
-        Expanded(child: _Metric(icon: Icons.battery_5_bar_outlined,
-          label: 'BATTERY', value: telemetry.batteryVoltage == null ? '— V'
-              : '${telemetry.batteryVoltage!.toStringAsFixed(2)} V')),
-        const SizedBox(width: 10),
-        Expanded(child: _Metric(icon: Icons.straighten_outlined,
-          label: 'DISTANCE', value: telemetry.distanceCm == null ? '— cm'
-              : '${telemetry.distanceCm!.toStringAsFixed(1)} cm')),
-      ]),
+        subtitle: 'Live front ultrasonic readings from the ESP32'),
       Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Overline('ROBOT STATUS'),
+        const Overline('FRONT DISTANCE'),
+        const SizedBox(height: 14),
+        Text(valid ? '${t.distanceCm!.toStringAsFixed(1)} cm' : '— cm',
+          style: const TextStyle(fontSize: 38, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 12),
+        Row(children: [
+          Icon(warning ? Icons.warning_amber_rounded : Icons.sensors_outlined,
+            color: warning ? OctoColors.danger : OctoColors.teal),
+          const SizedBox(width: 10),
+          Expanded(child: Text(!valid ? 'Sensor data unavailable'
+              : warning ? 'Obstacle detected nearby' : 'No nearby obstacle detected',
+            style: TextStyle(fontWeight: FontWeight.w800,
+              color: warning ? OctoColors.danger : OctoColors.ink))),
+        ]),
         const SizedBox(height: 8),
-        RowInfo(label: 'Connection', value: robot.connected ? 'WebSocket linked' : 'Offline',
-          trailing: Icon(Icons.circle, size: 9,
-            color: robot.connected ? OctoColors.teal : OctoColors.muted)),
-        const Divider(height: 1, color: OctoColors.line),
-        RowInfo(label: 'Mode', value: telemetry.mode ?? 'Not reported'),
-        const Divider(height: 1, color: OctoColors.line),
-        RowInfo(label: 'Robot state', value: telemetry.state ?? 'Not reported'),
-        const Divider(height: 1, color: OctoColors.line),
-        RowInfo(label: 'Calibration', value: telemetry.calibrated == null
-          ? 'Not reported' : telemetry.calibrated! ? 'Approved on ESP32' : 'LOCKED'),
-        const Divider(height: 1, color: OctoColors.line),
-        RowInfo(label: 'Physical ARM', value: telemetry.hardwareArmed == null
-          ? 'Not reported' : telemetry.hardwareArmed! ? 'Enabled' : 'Disarmed'),
-        const Divider(height: 1, color: OctoColors.line),
-        RowInfo(label: 'E-stop', value: telemetry.emergencyLatched == null
-          ? 'Not reported' : telemetry.emergencyLatched! ? 'Latched' : 'Clear'),
-        const Divider(height: 1, color: OctoColors.line),
-        RowInfo(label: 'Motion permission', value: telemetry.safeToDrive == null
-          ? 'Not reported' : telemetry.safeToDrive! ? 'Allowed by ESP32' : 'BLOCKED'),
-        const Divider(height: 1, color: OctoColors.line),
-        RowInfo(label: 'Applied forward', value: telemetry.appliedForward == null
-          ? 'Not reported' : telemetry.appliedForward!.toStringAsFixed(2)),
-        const Divider(height: 1, color: OctoColors.line),
-        RowInfo(label: 'Applied turn', value: telemetry.appliedTurn == null
-          ? 'Not reported' : telemetry.appliedTurn!.toStringAsFixed(2)),
-        const Divider(height: 1, color: OctoColors.line),
-        RowInfo(label: 'Gait phase', value: telemetry.gaitPhase ?? 'Not reported'),
-        const Divider(height: 1, color: OctoColors.line),
-        RowInfo(label: 'Obstacle', value: telemetry.obstacle == null
-          ? 'Unknown' : telemetry.obstacle! ? 'Detected' : 'Clear'),
-        const Divider(height: 1, color: OctoColors.line),
+        const Text('Warning only — proximity does not automatically stop walking.',
+          style: TextStyle(fontSize: 12, color: OctoColors.muted)),
+      ])),
+      Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Overline('SYSTEM STATUS'),
         const SizedBox(height: 10),
-        Text(last == null ? stamp : robot.telemetryFresh ? stamp : '$stamp  ·  STALE',
-          style: const TextStyle(color: OctoColors.muted, fontSize: 11)),
+        RowInfo(label: 'Connection',
+          value: robot.connected ? 'WebSocket linked' : 'Offline'),
+        const Divider(height: 1, color: OctoColors.line),
+        RowInfo(label: 'Movement',
+          value: fresh ? (t.state ?? 'Unknown') : 'Unknown'),
+        const Divider(height: 1, color: OctoColors.line),
+        RowInfo(label: 'Distance data',
+          value: valid ? 'Fresh' : 'Unavailable or stale'),
+        const Divider(height: 1, color: OctoColors.line),
+        RowInfo(label: 'Proximity',
+          value: !valid ? 'Unknown' : warning ? 'Obstacle detected' : 'Clear'),
+        const SizedBox(height: 12),
+        Text(!fresh && last != null ? '$updated · STALE' : updated,
+          style: const TextStyle(fontSize: 11, color: OctoColors.muted)),
       ])),
       Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const Overline('RECENT EVENTS'),
-        const SizedBox(height: 13),
+        const SizedBox(height: 12),
         if (robot.events.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 20),
-            child: Center(child: Text('No events recorded in this session.',
-              style: TextStyle(color: OctoColors.muted, fontSize: 12))),
-          )
+          const Text('No events recorded in this session.',
+            style: TextStyle(fontSize: 12, color: OctoColors.muted))
         else
-          for (final event in robot.events.take(8)) ...[
-            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Padding(padding: EdgeInsets.only(top: 5),
-                child: Icon(Icons.circle, size: 6, color: OctoColors.teal)),
-              const SizedBox(width: 9),
-              Expanded(child: Text(event,
-                style: const TextStyle(fontSize: 12, height: 1.4))),
-            ]),
-            const SizedBox(height: 12),
-          ],
+          for (final event in robot.events.take(8))
+            Padding(
+              padding: const EdgeInsets.only(bottom: 11),
+              child: Text(event, style: const TextStyle(fontSize: 12))),
       ])),
-      const Text('These are ESP32-reported values; physical servo motion, balance and '
-          'obstacle avoidance still require hardware commissioning.',
+      const Text('Distance measurements are informational only. '
+        'A software STOP is not a physical emergency cutoff.',
         style: TextStyle(fontSize: 11.5, color: OctoColors.muted)),
     ]);
   }
-}
-
-class _Metric extends StatelessWidget {
-  const _Metric({required this.icon, required this.label, required this.value});
-  final IconData icon;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) => Panel(child: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Icon(icon, size: 24, color: OctoColors.teal),
-      const SizedBox(height: 18),
-      Overline(label),
-      const SizedBox(height: 6),
-      Text(value, style: const TextStyle(fontSize: 23,
-        fontWeight: FontWeight.w900, letterSpacing: -.5)),
-    ],
-  ));
 }
