@@ -18,7 +18,7 @@ class DriveScreen extends StatelessWidget {
     return Column(children: [
       Expanded(child: PageFrame(children: [
         const PageHeading(title: 'Drive',
-          subtitle: 'Forward, backward and live proximity warning'),
+          subtitle: 'Walk, pivot in place and monitor proximity'),
         Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Overline('FRONT ULTRASONIC SENSOR'),
           const SizedBox(height: 10),
@@ -42,7 +42,7 @@ class DriveScreen extends StatelessWidget {
               color: detected ? OctoColors.danger : OctoColors.muted)),
         ])),
         Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const Overline('MANUAL WALKING'),
+          const Overline('MANUAL MOVEMENT'),
           const SizedBox(height: 10),
           Text(robot.motionLockReason, textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 12, color: OctoColors.muted)),
@@ -72,8 +72,24 @@ class DriveScreen extends StatelessWidget {
             onEnd: robot.stop,
           ),
           const SizedBox(height: 14),
-          const Text('Press and hold to move; release to stop. '
-            'Backward movement requires corresponding ESP32 gait support.',
+          Row(children: [
+            Expanded(child: _HoldDirection(
+              label: 'LEFT', icon: Icons.turn_left_rounded,
+              enabled: enabled,
+              onStart: () => robot.setMotion(nextForward: 0, nextTurn: -0.65),
+              onEnd: robot.stop,
+            )),
+            const SizedBox(width: 12),
+            Expanded(child: _HoldDirection(
+              label: 'RIGHT', icon: Icons.turn_right_rounded,
+              enabled: enabled,
+              onStart: () => robot.setMotion(nextForward: 0, nextTurn: 0.65),
+              onEnd: robot.stop,
+            )),
+          ]),
+          const SizedBox(height: 14),
+          const Text('Hold to move; release to stop. Left and right rotate '
+            'in place using the eight-leg alternating gait.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 11, color: OctoColors.muted)),
         ])),
