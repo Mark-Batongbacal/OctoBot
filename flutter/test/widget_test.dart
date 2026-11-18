@@ -11,6 +11,8 @@ void main() {
     expect(find.text('STOP MOTION'), findsOneWidget);
     expect(find.text('FORWARD'), findsOneWidget);
     expect(find.text('BACKWARD'), findsOneWidget);
+    expect(find.text('LEFT'), findsOneWidget);
+    expect(find.text('RIGHT'), findsOneWidget);
     expect(find.text('Autonomy'), findsNothing);
     expect(find.text('OCTOPOD / TOP VIEW'), findsNothing);
     expect(find.text('Connect to OctoBot to enable controls'), findsOneWidget);
