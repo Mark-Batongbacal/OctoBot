@@ -138,7 +138,7 @@ class _DriveScreenState extends State<DriveScreen> {
           const SizedBox(height: 5),
           Text(
             close ? 'Within 20 cm: forward stopped. Backward and turns remain available.' :
-            t.safetyBlocked == true ? 'Forward waits for 3 readings at 25 cm or farther.' :
+            t.safetyBlocked == true ? 'Forward unlocks after one valid reading at 25 cm or farther.' :
             !readingAvailable ? 'Sensor unavailable: forward disabled; reverse and turn allowed.' :
             'Sensor clear. New press required after any interruption.',
             style: const TextStyle(fontSize: 12, color: OctoColors.muted),
