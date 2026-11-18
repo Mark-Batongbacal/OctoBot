@@ -38,21 +38,24 @@ class RobotConnection extends ChangeNotifier {
   bool get hasMotion => forward.abs() > 0.001 || turn.abs() > 0.001;
   bool get telemetryFresh => telemetry.receivedAt != null &&
       DateTime.now().difference(telemetry.receivedAt!) < const Duration(seconds: 2);
-  /// This UI is enabled only when the ESP32 reports a fresh, safe sensor state.
-  /// The ESP32 independently enforces the interlock and command watchdog.
-  bool get manualArmed => connected && telemetryFresh &&
-      telemetry.mode == 'manual' && telemetry.sensorValid == true &&
-      telemetry.safetyBlocked == false && telemetry.safeToDrive == true;
+  /// Manual mode and a fresh link enable reverse and pivot controls.
+  /// The front ultrasonic sensor only restricts FORWARD movement.
+  bool get manualArmed =>
+      connected && telemetryFresh && telemetry.mode == 'manual';
 
-  bool get frontBlocked => telemetryFresh && telemetry.safetyBlocked != false;
+  bool get forwardBlocked =>
+      !telemetryFresh ||
+      telemetry.sensorValid != true ||
+      telemetry.safetyBlocked != false;
+
+  bool get frontBlocked => forwardBlocked;
 
   String get motionLockReason {
     if (!connected) return 'Connect to OctoBot to enable controls';
     if (!telemetryFresh) return 'Waiting for fresh ESP32 telemetry';
     if (telemetry.mode != 'manual') return 'Manual mode required';
-    if (telemetry.sensorValid != true) return 'Sensor unavailable — movement locked';
-    if (telemetry.safetyBlocked != false || telemetry.safeToDrive != true) {
-      return 'Obstacle safety lock — wait for 25 cm clearance';
+    if (forwardBlocked) {
+      return 'Forward locked · Backward and pivot controls available';
     }
     return 'Hold one direction to move · Release to stop';
   }
@@ -115,8 +118,9 @@ class RobotConnection extends ChangeNotifier {
       switch (message['type']) {
         case 'telemetry':
           telemetry = RobotTelemetry.fromJson(message);
-          // The ESP32 is authoritative. Clear a held command on interlock.
-          if (!manualArmed && hasMotion) stop();
+          // Only an active forward hold is interrupted by front proximity.
+          if (hasMotion && (!manualArmed ||
+              (forward > 0.10 && forwardBlocked))) stop();
           notifyListeners();
           break;
         case 'event':
@@ -168,7 +172,8 @@ class RobotConnection extends ChangeNotifier {
 
   void _tick(Timer _) {
     if (!connected) return;
-    if (hasMotion && !manualArmed) {
+    if (hasMotion && (!manualArmed ||
+        (forward > 0.10 && forwardBlocked))) {
       stop();
       _log('Motion stopped: connection telemetry stale or manual mode exited');
     } else if (hasMotion) {
@@ -185,6 +190,7 @@ class RobotConnection extends ChangeNotifier {
   /// Old presses can never resume after ESP32 obstacle interruption.
   void setMotion({required double nextForward, required double nextTurn}) {
     if (!manualArmed || hasMotion) return;
+    if (nextForward > 0.10 && forwardBlocked) return;
     final f = nextForward.clamp(-1.0, 1.0).toDouble();
     final t = nextTurn.clamp(-1.0, 1.0).toDouble();
     if ((f.abs() > .10 && t.abs() > .10) ||
