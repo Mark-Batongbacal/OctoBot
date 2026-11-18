@@ -97,7 +97,7 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
         _SetupStep(n: '3', title: 'Set the endpoint',
           description: 'Match the WebSocket address configured in ESP32 firmware.'),
         _SetupStep(n: '4', title: 'Check telemetry',
-          description: 'Manual controls unlock after fresh ESP32 telemetry arrives.'),
+          description: 'Controls unlock after fresh and safe sensor telemetry arrives.'),
       ])),
       Container(
         padding: const EdgeInsets.all(15),
