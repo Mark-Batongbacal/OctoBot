@@ -3,15 +3,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:octobot/app/octobot_app.dart';
 
 void main() {
-  testWidgets('offline robot cannot drive but stop remains present',
+  testWidgets('offline robot locks four directions and has no STOP button',
       (tester) async {
     await tester.pumpWidget(const OctoBotApp());
     expect(find.text('OCTOBOT'), findsOneWidget);
     expect(find.text('OFFLINE'), findsOneWidget);
-    expect(find.text('STOP MOTION'), findsOneWidget);
+    expect(find.text('STOP MOTION'), findsNothing);
     expect(find.text('FORWARD'), findsOneWidget);
     expect(find.text('BACKWARD'), findsOneWidget);
-    expect(find.text('LEFT'), findsOneWidget);
+    expect(find.text('LOCKED'), findsOneWidget);\n    expect(find.text('LEFT'), findsOneWidget);
     expect(find.text('RIGHT'), findsOneWidget);
     expect(find.text('Autonomy'), findsNothing);
     expect(find.text('OCTOPOD / TOP VIEW'), findsNothing);
