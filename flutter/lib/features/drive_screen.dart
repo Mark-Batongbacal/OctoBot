@@ -166,7 +166,7 @@ class _DriveScreenState extends State<DriveScreen> {
               ),
               child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                 Icon(blocked ? Icons.lock_outline : _heldDirection == null
-                    ? Icons.pan_tool_alt_outlined : Icons.lock_clock_outlined,
+                    ? Icons.pan_tool_alt_outlined : Icons.lock_outline,
                     color: blocked ? OctoColors.danger : OctoColors.teal),
                 const SizedBox(height: 4),
                 Text(blocked ? 'LOCKED' : _heldDirection == null ? 'IDLE' : 'HELD',
