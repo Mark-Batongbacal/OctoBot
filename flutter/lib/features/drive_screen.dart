@@ -95,6 +95,8 @@ class _DriveScreenState extends State<DriveScreen> {
     final robot = widget.robot;
     final t = robot.telemetry;
     final fresh = robot.telemetryFresh;
+    // Show every valid distance, including readings at or below 20 cm.
+    // A blocked direction must not suppress the numeric measurement.
     final readingAvailable = fresh && t.sensorValid == true &&
         t.distanceCm != null;
     final blocked = !robot.manualArmed;
@@ -126,7 +128,8 @@ class _DriveScreenState extends State<DriveScreen> {
             const Expanded(child: Overline('FRONT DISTANCE')),
             Text(
               readingAvailable ? '${t.distanceCm!.toStringAsFixed(1)} cm' : '— cm',
-              style: const TextStyle(fontSize: 25, fontWeight: FontWeight.w900),
+              style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900,
+                color: close ? OctoColors.danger : OctoColors.ink),
             ),
           ]),
           const SizedBox(height: 10),
@@ -137,7 +140,7 @@ class _DriveScreenState extends State<DriveScreen> {
           )),
           const SizedBox(height: 5),
           Text(
-            close ? 'Within 20 cm: forward stopped. Backward and turns remain available.' :
+            close ? 'Measured ${t.distanceCm!.toStringAsFixed(1)} cm (≤20 cm). Forward stopped; reverse and turns available.' :
             t.safetyBlocked == true ? 'Forward unlocks after one valid reading at 25 cm or farther.' :
             !readingAvailable ? 'Sensor unavailable: forward disabled; reverse and turn allowed.' :
             'Sensor clear. New press required after any interruption.',
