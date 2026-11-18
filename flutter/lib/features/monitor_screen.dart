@@ -32,12 +32,12 @@ class MonitorScreen extends StatelessWidget {
             color: warning ? OctoColors.danger : OctoColors.teal),
           const SizedBox(width: 10),
           Expanded(child: Text(!valid ? 'Sensor data unavailable'
-              : warning ? 'Safety interlock active' : 'Distance clearance confirmed',
+              : warning ? 'Forward safety interlock active' : 'Forward path clear',
             style: TextStyle(fontWeight: FontWeight.w800,
               color: warning ? OctoColors.danger : OctoColors.ink))),
         ]),
         const SizedBox(height: 8),
-        const Text('ESP32 stops gait updates within 20 cm; 3 clear readings at 25 cm unlock controls.',
+        const Text('Only forward stops within 20 cm; 3 clear readings at 25 cm unlock Forward.',
           style: TextStyle(fontSize: 12, color: OctoColors.muted)),
       ])),
       Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -53,7 +53,7 @@ class MonitorScreen extends StatelessWidget {
           value: valid ? 'Fresh' : 'Unavailable or stale'),
         const Divider(height: 1, color: OctoColors.line),
         RowInfo(label: 'Safety',
-          value: !fresh ? 'Telemetry stale' : warning ? 'Movement locked' : 'Ready'),
+          value: !fresh ? 'Telemetry stale' : warning ? 'Forward locked' : 'Forward ready'),
         const SizedBox(height: 12),
         Text(!fresh && last != null ? '$updated · STALE' : updated,
           style: const TextStyle(fontSize: 11, color: OctoColors.muted)),
