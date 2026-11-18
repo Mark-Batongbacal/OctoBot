@@ -62,9 +62,7 @@ class RobotConnection extends ChangeNotifier {
       return 'Test controls enabled; ESP32 safety checks still block physical motion';
     }
     if (telemetry.state == 'blocked') return 'Robot reported motion blocked';
-    return frontBlocked
-        ? 'Front obstacle: reverse and turn only'
-        : 'Hold to drive · Release to stop';
+    return 'Hold Forward or Backward · Release to stop';
   }
 
   void _log(String message) {
@@ -123,16 +121,7 @@ class RobotConnection extends ChangeNotifier {
       switch (message['type']) {
         case 'telemetry':
           telemetry = RobotTelemetry.fromJson(message);
-          // Never keep sending a forward target after obstacle detection.
-          // Robot firmware independently applies the same restriction.
-          if (telemetry.obstacle == true && forward > 0) {
-            forward = 0;
-            if (hasMotion) {
-              _sendMotion();
-            } else {
-              _send({'type': 'stop'});
-            }
-          }
+          // Ultrasonic proximity is informational; never change motion here.
           notifyListeners();
           break;
         case 'event':
@@ -199,9 +188,8 @@ class RobotConnection extends ChangeNotifier {
   void setMotion({required double nextForward, required double nextTurn}) {
     if (!manualArmed) return;
     final requestedForward = nextForward.clamp(-1.0, 1.0).toDouble();
-    // The sole range sensor looks forward. Do not request travel into an
-    // obstacle, but keep reverse/rotation commands available to escape.
-    final newForward = frontBlocked && requestedForward > 0 ? 0.0 : requestedForward;
+    // Proximity is display-only. ESP32 retains independent safety authority.
+    final newForward = requestedForward;
     final newTurn = nextTurn.clamp(-1.0, 1.0).toDouble();
     final wasMoving = hasMotion;
     forward = newForward.abs() < .10 ? 0 : newForward;
@@ -236,11 +224,8 @@ class RobotConnection extends ChangeNotifier {
   }
 
   void requestMode(String requested) {
-    if (!connected || !{'manual', 'autonomous'}.contains(requested)) return;
-    if (requested == 'autonomous' && (!telemetryFresh || !telemetry.motionAuthorized)) {
-      _log('Autonomous mode blocked: robot is not physically ready');
-      return;
-    }
+    if (!connected || requested != 'manual') return;
+    if (requested != 'manual') return;
     stop();
     _send({'type': 'mode', 'value': requested});
     _log('Requested $requested mode — waiting for robot acknowledgement');
