@@ -108,8 +108,8 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
           SizedBox(width: 10),
           Expanded(child: Text(
             'Connect to ws://192.168.4.1/ws while on the robot Wi-Fi. '
-            'Forward and backward controls send signed drive commands; the ESP32 '
-            'firmware must implement both directions. Obstacle readings are warnings '
+            'Forward/backward send signed forward commands; left/right send signed '
+            'turn commands for rotation in place. Matching ESP32 firmware is required. '
             'only in Flutter. Keep a physical emergency power cutoff.',
             style: TextStyle(fontSize: 12, height: 1.45))),
         ]),
