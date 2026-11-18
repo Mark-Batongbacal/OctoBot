@@ -20,6 +20,8 @@ class RobotConnection extends ChangeNotifier {
   late final Timer _timer;
   int _generation = 0;
   int _ticks = 0;
+  int _nextPressId = 0;
+  int? _activePressId;
   bool _connecting = false;
   String? _error;
   String endpoint = defaultEndpoint;
@@ -36,33 +38,23 @@ class RobotConnection extends ChangeNotifier {
   bool get hasMotion => forward.abs() > 0.001 || turn.abs() > 0.001;
   bool get telemetryFresh => telemetry.receivedAt != null &&
       DateTime.now().difference(telemetry.receivedAt!) < const Duration(seconds: 2);
-  /// Unlock manual controls for protocol testing once manual-mode telemetry
-  /// is fresh. This does NOT authorize physical movement: the ESP32 alone
-  /// enforces ARM, E-stop, front sensor and watchdog interlocks. Firmware
-  /// permits only limited manual bench movement while uncalibrated.
+  /// This UI is enabled only when the ESP32 reports a fresh, safe sensor state.
+  /// The ESP32 independently enforces the interlock and command watchdog.
   bool get manualArmed => connected && telemetryFresh &&
-      telemetry.mode == 'manual';
+      telemetry.mode == 'manual' && telemetry.sensorValid == true &&
+      telemetry.safetyBlocked == false && telemetry.safeToDrive == true;
 
-  bool get frontBlocked => telemetryFresh && telemetry.obstacle == true;
+  bool get frontBlocked => telemetryFresh && telemetry.safetyBlocked != false;
 
   String get motionLockReason {
     if (!connected) return 'Connect to OctoBot to enable controls';
     if (!telemetryFresh) return 'Waiting for fresh ESP32 telemetry';
-    if (telemetry.mode != 'manual') return 'Request manual mode before testing controls';
-    if (telemetry.calibrated != true) {
-      return 'Bench test: servo calibration pending; keep robot supported off-ground';
+    if (telemetry.mode != 'manual') return 'Manual mode required';
+    if (telemetry.sensorValid != true) return 'Sensor unavailable — movement locked';
+    if (telemetry.safetyBlocked != false || telemetry.safeToDrive != true) {
+      return 'Obstacle safety lock — wait for 25 cm clearance';
     }
-    if (telemetry.emergencyLatched != false) {
-      return 'Test controls enabled; ESP32 E-stop prevents physical motion';
-    }
-    if (telemetry.hardwareArmed != true) {
-      return 'Test controls enabled; physical ARM switch is not enabled';
-    }
-    if (telemetry.safeToDrive != true || telemetry.state == 'fault') {
-      return 'Test controls enabled; ESP32 safety checks still block physical motion';
-    }
-    if (telemetry.state == 'blocked') return 'Robot reported motion blocked';
-    return 'Hold Forward, Backward, Left or Right · Release to stop';
+    return 'Hold one direction to move · Release to stop';
   }
 
   void _log(String message) {
@@ -96,6 +88,8 @@ class RobotConnection extends ChangeNotifier {
         return;
       }
       _socket = socket;
+      _nextPressId = 0;
+      _activePressId = null;
       _connecting = false;
       telemetry = const RobotTelemetry();
       _subscription = socket.listen(
@@ -121,7 +115,8 @@ class RobotConnection extends ChangeNotifier {
       switch (message['type']) {
         case 'telemetry':
           telemetry = RobotTelemetry.fromJson(message);
-          // Ultrasonic proximity is informational; never change motion here.
+          // The ESP32 is authoritative. Clear a held command on interlock.
+          if (!manualArmed && hasMotion) stop();
           notifyListeners();
           break;
         case 'event':
@@ -144,6 +139,7 @@ class RobotConnection extends ChangeNotifier {
     _subscription = null;
     forward = 0;
     turn = 0;
+    _activePressId = null;
     telemetry = const RobotTelemetry();
     _log(reason);
   }
@@ -159,9 +155,10 @@ class RobotConnection extends ChangeNotifier {
   }
 
   void _sendMotion() {
-    if (!connected) return;
+    if (!connected || _activePressId == null) return;
     _send({
       'type': 'drive',
+      'press_id': _activePressId,
       'forward': double.parse(forward.toStringAsFixed(3)),
       'turn': double.parse(turn.toStringAsFixed(3)),
       'speed': double.parse(speed.toStringAsFixed(2)),
@@ -184,22 +181,19 @@ class RobotConnection extends ChangeNotifier {
     }
   }
 
-  /// Exclusive manual commands: signed forward walks; signed turn pivots in place.\n  /// Positive turn means right; negative turn means left.
+  /// A new press ID is assigned only when a NEW hold begins.
+  /// Old presses can never resume after ESP32 obstacle interruption.
   void setMotion({required double nextForward, required double nextTurn}) {
-    if (!manualArmed) return;
-    final requestedForward = nextForward.clamp(-1.0, 1.0).toDouble();
-    // Proximity is display-only. ESP32 retains independent safety authority.
-    final newForward = requestedForward;
-    final newTurn = nextTurn.clamp(-1.0, 1.0).toDouble();
-    final wasMoving = hasMotion;
-    forward = newForward.abs() < .10 ? 0 : newForward;
-    turn = newTurn.abs() < .10 ? 0 : newTurn;
-    if (!hasMotion && wasMoving) {
-      stop();
-    } else if (hasMotion) {
-      _sendMotion();
-      notifyListeners();
-    }
+    if (!manualArmed || hasMotion) return;
+    final f = nextForward.clamp(-1.0, 1.0).toDouble();
+    final t = nextTurn.clamp(-1.0, 1.0).toDouble();
+    if ((f.abs() > .10 && t.abs() > .10) ||
+        (f.abs() <= .10 && t.abs() <= .10)) return;
+    forward = f.abs() < .10 ? 0 : f;
+    turn = t.abs() < .10 ? 0 : t;
+    _activePressId = ++_nextPressId;
+    _sendMotion();
+    notifyListeners();
   }
 
   void setSpeed(double nextSpeed) {
@@ -219,13 +213,13 @@ class RobotConnection extends ChangeNotifier {
   void stop() {
     forward = 0;
     turn = 0;
+    _activePressId = null;
     _send({'type': 'stop'});
     notifyListeners();
   }
 
   void requestMode(String requested) {
     if (!connected || requested != 'manual') return;
-    if (requested != 'manual') return;
     stop();
     _send({'type': 'mode', 'value': requested});
     _log('Requested $requested mode — waiting for robot acknowledgement');
