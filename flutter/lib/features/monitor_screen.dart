@@ -12,7 +12,8 @@ class MonitorScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = robot.telemetry;
     final fresh = robot.telemetryFresh;
-    final valid = fresh && t.distanceCm != null;
+    // Keep valid close-range readings visible while Forward is blocked.
+    final valid = fresh && t.sensorValid == true && t.distanceCm != null;
     final warning = fresh && t.safetyBlocked != false;
     final last = t.receivedAt;
     final updated = last == null ? 'No telemetry received'
@@ -25,14 +26,15 @@ class MonitorScreen extends StatelessWidget {
         const Overline('FRONT DISTANCE'),
         const SizedBox(height: 14),
         Text(valid ? '${t.distanceCm!.toStringAsFixed(1)} cm' : '— cm',
-          style: const TextStyle(fontSize: 38, fontWeight: FontWeight.w900)),
+          style: TextStyle(fontSize: 38, fontWeight: FontWeight.w900,
+            color: valid && t.distanceCm! <= 20.0 ? OctoColors.danger : OctoColors.ink)),
         const SizedBox(height: 12),
         Row(children: [
           Icon(warning ? Icons.warning_amber_rounded : Icons.sensors_outlined,
             color: warning ? OctoColors.danger : OctoColors.teal),
           const SizedBox(width: 10),
           Expanded(child: Text(!valid ? 'Sensor data unavailable'
-              : warning ? 'Forward safety interlock active' : 'Forward path clear',
+              : warning ? 'Forward blocked (${t.distanceCm!.toStringAsFixed(1)} cm)' : 'Forward path clear',
             style: TextStyle(fontWeight: FontWeight.w800,
               color: warning ? OctoColors.danger : OctoColors.ink))),
         ]),
