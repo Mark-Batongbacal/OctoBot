@@ -37,7 +37,7 @@ class MonitorScreen extends StatelessWidget {
               color: warning ? OctoColors.danger : OctoColors.ink))),
         ]),
         const SizedBox(height: 8),
-        const Text('Only forward stops within 20 cm; 3 clear readings at 25 cm unlock Forward.',
+        const Text('Only Forward stops within 20 cm; one valid reading at 25 cm unlocks Forward.',
           style: TextStyle(fontSize: 12, color: OctoColors.muted)),
       ])),
       Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
