@@ -11,7 +11,8 @@ void main() {
     expect(find.text('STOP MOTION'), findsNothing);
     expect(find.text('FORWARD'), findsOneWidget);
     expect(find.text('BACKWARD'), findsOneWidget);
-    expect(find.text('LOCKED'), findsOneWidget);\n    expect(find.text('LEFT'), findsOneWidget);
+    expect(find.text('LOCKED'), findsOneWidget);
+    expect(find.text('LEFT'), findsOneWidget);
     expect(find.text('RIGHT'), findsOneWidget);
     expect(find.text('Autonomy'), findsNothing);
     expect(find.text('OCTOPOD / TOP VIEW'), findsNothing);
