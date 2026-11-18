@@ -20,6 +20,7 @@ class _DriveScreenState extends State<DriveScreen> {
 
   void _press(String direction, int pointer, double forward, double turn) {
     if (_heldPointer != null || !widget.robot.manualArmed) return;
+    if (direction == 'FORWARD' && widget.robot.forwardBlocked) return;
     setState(() {
       _heldDirection = direction;
       _heldPointer = pointer;
@@ -44,7 +45,8 @@ class _DriveScreenState extends State<DriveScreen> {
     double height = 84,
   }) {
     final held = _heldDirection == label;
-    final blocked = !widget.robot.manualArmed;
+    final blocked = !widget.robot.manualArmed ||
+        (label == 'FORWARD' && widget.robot.forwardBlocked);
     final enabled = !blocked && (_heldDirection == null || held);
     final active = held && !blocked;
     return Semantics(
@@ -96,13 +98,15 @@ class _DriveScreenState extends State<DriveScreen> {
     final readingAvailable = fresh && t.sensorValid == true &&
         t.distanceCm != null;
     final blocked = !robot.manualArmed;
+    final forwardBlocked = robot.forwardBlocked;
     final close = readingAvailable && t.obstacle == true;
     final safetyMessage = !robot.connected ? 'Connect to begin' :
         !fresh ? 'Waiting for live telemetry' :
         t.sensorValid != true ? 'SENSOR UNAVAILABLE' :
-        t.safetyBlocked != false ? 'MOVEMENT BLOCKED' : 'READY TO MOVE';
+        forwardBlocked ? 'FORWARD BLOCKED' : 'ALL DIRECTIONS READY';
     final activeText = _heldDirection != null
-        ? (blocked ? 'Interrupted · release your finger' :
+        ? ((blocked || (_heldDirection == 'FORWARD' && forwardBlocked))
+            ? 'Interrupted · release your finger' :
            'Holding $_heldDirection · other directions locked')
         : robot.motionLockReason;
 
@@ -116,7 +120,7 @@ class _DriveScreenState extends State<DriveScreen> {
           Row(children: [
             Icon(close || (fresh && t.safetyBlocked == true)
                 ? Icons.shield_outlined : Icons.sensors_outlined,
-                color: close || blocked ? OctoColors.danger : OctoColors.teal,
+                color: close || forwardBlocked ? OctoColors.danger : OctoColors.teal,
                 size: 26),
             const SizedBox(width: 10),
             const Expanded(child: Overline('FRONT DISTANCE')),
@@ -128,14 +132,14 @@ class _DriveScreenState extends State<DriveScreen> {
           const SizedBox(height: 10),
           Text(safetyMessage, style: TextStyle(
             fontSize: 12, fontWeight: FontWeight.w900,
-            color: blocked ? OctoColors.danger : OctoColors.teal,
+            color: forwardBlocked ? OctoColors.danger : OctoColors.teal,
             letterSpacing: 0.7,
           )),
           const SizedBox(height: 5),
           Text(
-            close ? 'Obstacle within 20 cm — ESP32 inhibits all movement.' :
-            t.safetyBlocked == true ? 'Wait for 3 readings at 25 cm or farther.' :
-            !readingAvailable ? 'No reliable reading. Movement is disabled.' :
+            close ? 'Within 20 cm: forward stopped. Backward and turns remain available.' :
+            t.safetyBlocked == true ? 'Forward waits for 3 readings at 25 cm or farther.' :
+            !readingAvailable ? 'Sensor unavailable: forward disabled; reverse and turn allowed.' :
             'Sensor clear. New press required after any interruption.',
             style: const TextStyle(fontSize: 12, color: OctoColors.muted),
           ),
@@ -188,7 +192,7 @@ class _DriveScreenState extends State<DriveScreen> {
           const SizedBox(height: 14),
           const Text(
             'Only one direction at a time. Lift your finger to stop. '
-            'When blocked, release and press again after clearance.',
+            'When Forward is blocked, release and press again after clearance.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 11, color: OctoColors.muted),
           ),
