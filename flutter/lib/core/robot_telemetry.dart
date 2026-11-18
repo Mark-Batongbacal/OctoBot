@@ -9,6 +9,8 @@ class RobotTelemetry {
     this.gaitPhase,
     this.state,
     this.obstacle,
+    this.sensorValid,
+    this.safetyBlocked,
     this.calibrated,
     this.hardwareArmed,
     this.emergencyLatched,
@@ -26,6 +28,8 @@ class RobotTelemetry {
   final String? gaitPhase;
   final String? state;
   final bool? obstacle;
+  final bool? sensorValid;
+  final bool? safetyBlocked;
   final bool? calibrated;
   final bool? hardwareArmed;
   final bool? emergencyLatched;
@@ -55,6 +59,8 @@ class RobotTelemetry {
       gaitPhase: json['gait_phase'] is String ? json['gait_phase'] as String : null,
       state: json['state'] is String ? json['state'] as String : null,
       obstacle: json['obstacle'] is bool ? json['obstacle'] as bool : null,
+      sensorValid: json['sensor_valid'] is bool ? json['sensor_valid'] as bool : null,
+      safetyBlocked: json['safety_blocked'] is bool ? json['safety_blocked'] as bool : null,
       calibrated: json['calibrated'] is bool ? json['calibrated'] as bool : null,
       hardwareArmed: json['hardware_armed'] is bool ? json['hardware_armed'] as bool : null,
       emergencyLatched: json['emergency_latched'] is bool ? json['emergency_latched'] as bool : null,
