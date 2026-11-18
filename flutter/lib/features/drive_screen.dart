@@ -4,94 +4,194 @@ import '../app/octobot_theme.dart';
 import '../core/robot_connection.dart';
 import '../widgets/panels.dart';
 
-class DriveScreen extends StatelessWidget {
+/// One active touch/pointer at a time. A blocked hold cannot silently restart:
+/// the pointer must be released before another press is accepted.
+class DriveScreen extends StatefulWidget {
   const DriveScreen({required this.robot, super.key});
   final RobotConnection robot;
 
   @override
+  State<DriveScreen> createState() => _DriveScreenState();
+}
+
+class _DriveScreenState extends State<DriveScreen> {
+  String? _heldDirection;
+  int? _heldPointer;
+
+  void _press(String direction, int pointer, double forward, double turn) {
+    if (_heldPointer != null || !widget.robot.manualArmed) return;
+    setState(() {
+      _heldDirection = direction;
+      _heldPointer = pointer;
+    });
+    widget.robot.setMotion(nextForward: forward, nextTurn: turn);
+  }
+
+  void _release(int pointer) {
+    if (_heldPointer != pointer) return;
+    setState(() {
+      _heldDirection = null;
+      _heldPointer = null;
+    });
+    widget.robot.stop();
+  }
+
+  Widget _direction({
+    required String label,
+    required IconData icon,
+    required double forward,
+    required double turn,
+    double height = 84,
+  }) {
+    final held = _heldDirection == label;
+    final blocked = !widget.robot.manualArmed;
+    final enabled = !blocked && (_heldDirection == null || held);
+    final active = held && !blocked;
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: 'Hold $label to move; release to stop',
+      child: Listener(
+        behavior: HitTestBehavior.opaque,
+        onPointerDown: (event) =>
+            _press(label, event.pointer, forward, turn),
+        onPointerUp: (event) => _release(event.pointer),
+        onPointerCancel: (event) => _release(event.pointer),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 110),
+          height: height,
+          decoration: BoxDecoration(
+            color: active ? OctoColors.teal : held
+                ? OctoColors.tealWash
+                : enabled ? OctoColors.tealWash : OctoColors.canvas,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: active ? OctoColors.teal : OctoColors.line,
+              width: active ? 2 : 1,
+            ),
+          ),
+          child: Opacity(
+            opacity: enabled || held ? 1 : 0.45,
+            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Icon(icon, size: 27,
+                  color: active ? Colors.white : OctoColors.teal),
+              const SizedBox(height: 4),
+              Text(label, style: TextStyle(
+                fontSize: 12, letterSpacing: 0.8,
+                fontWeight: FontWeight.w900,
+                color: active ? Colors.white : OctoColors.ink,
+              )),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final distance = robot.telemetry.distanceCm;
+    final robot = widget.robot;
+    final t = robot.telemetry;
     final fresh = robot.telemetryFresh;
-    final detected = fresh && robot.telemetry.obstacle == true;
-    final enabled = robot.manualArmed;
+    final readingAvailable = fresh && t.sensorValid == true &&
+        t.distanceCm != null;
+    final blocked = !robot.manualArmed;
+    final close = readingAvailable && t.obstacle == true;
+    final safetyMessage = !robot.connected ? 'Connect to begin' :
+        !fresh ? 'Waiting for live telemetry' :
+        t.sensorValid != true ? 'SENSOR UNAVAILABLE' :
+        t.safetyBlocked != false ? 'MOVEMENT BLOCKED' : 'READY TO MOVE';
+    final activeText = _heldDirection != null
+        ? (blocked ? 'Interrupted · release your finger' :
+           'Holding $_heldDirection · other directions locked')
+        : robot.motionLockReason;
 
     return Column(children: [
       Expanded(child: PageFrame(children: [
-        const PageHeading(title: 'Drive',
-          subtitle: 'Walk, pivot in place and monitor proximity'),
+        const PageHeading(
+          title: 'Drive',
+          subtitle: 'Hold one direction · Release to stop',
+        ),
         Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Overline('FRONT ULTRASONIC SENSOR'),
-          const SizedBox(height: 10),
           Row(children: [
-            const Icon(Icons.sensors_outlined, size: 29, color: OctoColors.teal),
-            const SizedBox(width: 12),
-            Expanded(child: Text(
-              fresh && distance != null ? '${distance.toStringAsFixed(1)} cm' : '— cm',
-              style: const TextStyle(fontSize: 29, fontWeight: FontWeight.w900),
-            )),
-            Text(!fresh || distance == null ? 'NO READING'
-                : detected ? 'OBSTACLE DETECTED' : 'CLEAR',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800,
-                color: detected ? OctoColors.danger : OctoColors.muted)),
+            Icon(close || (fresh && t.safetyBlocked == true)
+                ? Icons.shield_outlined : Icons.sensors_outlined,
+                color: close || blocked ? OctoColors.danger : OctoColors.teal,
+                size: 26),
+            const SizedBox(width: 10),
+            const Expanded(child: Overline('FRONT DISTANCE')),
+            Text(
+              readingAvailable ? '${t.distanceCm!.toStringAsFixed(1)} cm' : '— cm',
+              style: const TextStyle(fontSize: 25, fontWeight: FontWeight.w900),
+            ),
           ]),
-          const SizedBox(height: 8),
-          Text(detected
-              ? 'Nearby object detected. This warning does not stop the robot.'
-              : 'Distance is monitored only; obstacle sensing does not control movement.',
-            style: TextStyle(fontSize: 12,
-              color: detected ? OctoColors.danger : OctoColors.muted)),
+          const SizedBox(height: 10),
+          Text(safetyMessage, style: TextStyle(
+            fontSize: 12, fontWeight: FontWeight.w900,
+            color: blocked ? OctoColors.danger : OctoColors.teal,
+            letterSpacing: 0.7,
+          )),
+          const SizedBox(height: 5),
+          Text(
+            close ? 'Obstacle within 20 cm — ESP32 inhibits all movement.' :
+            t.safetyBlocked == true ? 'Wait for 3 readings at 25 cm or farther.' :
+            !readingAvailable ? 'No reliable reading. Movement is disabled.' :
+            'Sensor clear. New press required after any interruption.',
+            style: const TextStyle(fontSize: 12, color: OctoColors.muted),
+          ),
         ])),
         Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const Overline('MANUAL MOVEMENT'),
+          const Overline('DIRECTIONAL CONTROLLER'),
           const SizedBox(height: 10),
-          Text(robot.motionLockReason, textAlign: TextAlign.center,
+          Text(activeText, textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 12, color: OctoColors.muted)),
-          const SizedBox(height: 18),
-          _HoldDirection(
-            label: 'FORWARD', icon: Icons.arrow_upward_rounded,
-            enabled: enabled,
-            onStart: () => robot.setMotion(nextForward: 0.65, nextTurn: 0),
-            onEnd: robot.stop,
-          ),
-          const SizedBox(height: 14),
-          FilledButton.icon(
-            onPressed: robot.connected ? robot.stop : null,
-            style: FilledButton.styleFrom(
-              backgroundColor: OctoColors.danger,
-              foregroundColor: Colors.white,
-              minimumSize: const Size.fromHeight(60)),
-            icon: const Icon(Icons.stop_circle_outlined),
-            label: const Text('STOP MOTION',
-              style: TextStyle(fontWeight: FontWeight.w900)),
-          ),
-          const SizedBox(height: 14),
-          _HoldDirection(
-            label: 'BACKWARD', icon: Icons.arrow_downward_rounded,
-            enabled: enabled,
-            onStart: () => robot.setMotion(nextForward: -0.65, nextTurn: 0),
-            onEnd: robot.stop,
-          ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
+          Center(child: SizedBox(width: 150, child: _direction(
+            label: 'FORWARD', icon: Icons.keyboard_arrow_up_rounded,
+            forward: 0.65, turn: 0,
+          ))),
+          const SizedBox(height: 10),
           Row(children: [
-            Expanded(child: _HoldDirection(
-              label: 'LEFT', icon: Icons.turn_left_rounded,
-              enabled: enabled,
-              onStart: () => robot.setMotion(nextForward: 0, nextTurn: -0.65),
-              onEnd: robot.stop,
+            Expanded(child: _direction(
+              label: 'LEFT', icon: Icons.rotate_left_rounded,
+              forward: 0, turn: 0.65, // Physical steering reversal
             )),
-            const SizedBox(width: 12),
-            Expanded(child: _HoldDirection(
-              label: 'RIGHT', icon: Icons.turn_right_rounded,
-              enabled: enabled,
-              onStart: () => robot.setMotion(nextForward: 0, nextTurn: 0.65),
-              onEnd: robot.stop,
+            const SizedBox(width: 10),
+            Container(
+              width: 74, height: 84,
+              decoration: BoxDecoration(
+                color: OctoColors.canvas,
+                border: Border.all(color: OctoColors.line),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Icon(blocked ? Icons.lock_outline : _heldDirection == null
+                    ? Icons.pan_tool_alt_outlined : Icons.lock_clock_outlined,
+                    color: blocked ? OctoColors.danger : OctoColors.teal),
+                const SizedBox(height: 4),
+                Text(blocked ? 'LOCKED' : _heldDirection == null ? 'IDLE' : 'HELD',
+                  style: const TextStyle(fontSize: 10,
+                    color: OctoColors.muted, fontWeight: FontWeight.w800)),
+              ]),
+            ),
+            const SizedBox(width: 10),
+            Expanded(child: _direction(
+              label: 'RIGHT', icon: Icons.rotate_right_rounded,
+              forward: 0, turn: -0.65, // Physical steering reversal
             )),
           ]),
+          const SizedBox(height: 10),
+          Center(child: SizedBox(width: 150, child: _direction(
+            label: 'BACKWARD', icon: Icons.keyboard_arrow_down_rounded,
+            forward: -0.65, turn: 0,
+          ))),
           const SizedBox(height: 14),
-          const Text('Hold to move; release to stop. Left and right rotate '
-            'in place using the eight-leg alternating gait.',
+          const Text(
+            'Only one direction at a time. Lift your finger to stop. '
+            'When blocked, release and press again after clearance.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 11, color: OctoColors.muted)),
+            style: TextStyle(fontSize: 11, color: OctoColors.muted),
+          ),
         ])),
       ])),
       Container(
@@ -99,49 +199,11 @@ class DriveScreen extends StatelessWidget {
         color: OctoColors.canvas,
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
         child: const Text(
-          'Ultrasonic detection is a warning only. Use a physical emergency power cutoff.',
+          'Software obstacle detection is not a physical emergency cutoff.',
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 11, color: OctoColors.muted)),
+          style: TextStyle(fontSize: 11, color: OctoColors.muted),
+        ),
       ),
     ]);
   }
-}
-
-class _HoldDirection extends StatelessWidget {
-  const _HoldDirection({required this.label, required this.icon,
-    required this.enabled, required this.onStart, required this.onEnd});
-
-  final String label;
-  final IconData icon;
-  final bool enabled;
-  final VoidCallback onStart;
-  final VoidCallback onEnd;
-
-  @override
-  Widget build(BuildContext context) => Semantics(
-    label: 'Hold to move ${label.toLowerCase()}, release to stop',
-    button: true,
-    enabled: enabled,
-    child: GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: enabled ? (_) => onStart() : null,
-      onTapUp: enabled ? (_) => onEnd() : null,
-      onTapCancel: enabled ? onEnd : null,
-      child: Container(
-        height: 78,
-        decoration: BoxDecoration(
-          color: enabled ? OctoColors.tealWash : OctoColors.canvas,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: OctoColors.line)),
-        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(icon, size: 30,
-            color: enabled ? OctoColors.teal : OctoColors.muted),
-          const SizedBox(width: 14),
-          Text(label, style: TextStyle(
-            fontSize: 17, fontWeight: FontWeight.w900,
-            color: enabled ? OctoColors.ink : OctoColors.muted)),
-        ]),
-      ),
-    ),
-  );
 }
