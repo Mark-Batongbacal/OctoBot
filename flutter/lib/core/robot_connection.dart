@@ -62,7 +62,7 @@ class RobotConnection extends ChangeNotifier {
       return 'Test controls enabled; ESP32 safety checks still block physical motion';
     }
     if (telemetry.state == 'blocked') return 'Robot reported motion blocked';
-    return 'Hold Forward or Backward · Release to stop';
+    return 'Hold Forward, Backward, Left or Right · Release to stop';
   }
 
   void _log(String message) {
@@ -184,7 +184,7 @@ class RobotConnection extends ChangeNotifier {
     }
   }
 
-  /// Joystick values: +forward means north, +turn means clockwise/right.
+  /// Exclusive manual commands: signed forward walks; signed turn pivots in place.\n  /// Positive turn means right; negative turn means left.
   void setMotion({required double nextForward, required double nextTurn}) {
     if (!manualArmed) return;
     final requestedForward = nextForward.clamp(-1.0, 1.0).toDouble();
